@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  <entry>
+    <title>Hello World</title>
+    <url>/2025/07/16/hello-world/</url>
+    <content><![CDATA[Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.
+Quick StartCreate a new post
+
+$ hexo new &quot;My New Post&quot;
+
+
+More info: Writing
+Run server
+
+$ hexo server
+
+
+More info: Server
+Generate static files
+
+$ hexo generate
+
+
+More info: Generating
+Deploy to remote sites
+
+$ hexo deploy
+
+
+More info: Deployment
+]]></content>
+  </entry>
+  <entry>
+    <title>my-first-blog</title>
+    <url>/2025/07/16/my-first-blog/</url>
+    <content><![CDATA[这是我的第一个博客，我将在这里分享我学习网络安全相关知识以及一些有趣的内容
+]]></content>
+  </entry>
+</search>
