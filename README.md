@@ -28,6 +28,7 @@ npm run deploy
 
 - `_config.redefine.yml`：主题设置、菜单、首页文案。
 - `source/assets/custom.css`：少量自定义样式，未修改上游主题。
+- `scripts/search-ready.js`：为 Redefine 2.9.0 的生成后搜索模块应用小补丁，修复首次索引加载较慢时不刷新结果的问题；未改动安装的主题文件。
 - `source/assets/hero.webp`：首页封面（AI 生成）。
 - `source/assets/hello-cover.webp`：由同一封面裁切，用于 Hello World。
 
