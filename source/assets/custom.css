@@ -12,7 +12,8 @@ html { scroll-padding-top: 100px; }
 .navbar-container .navbar-content .left .logo-title, .navbar-container .navbar-content .left .logo-title h1, .navbar-container .navbar-content .right .desktop .navbar-list .navbar-item, .navbar-container .navbar-content .right .desktop .navbar-list .navbar-item a, .navbar-container .navbar-content .right .desktop .navbar-list .navbar-item i, .navbar-container .navbar-content .right .mobile .icon-item { color: #f3f7fb !important; }
 .navbar-container .navbar-content .right .desktop .navbar-list .navbar-item a.active::after { background: #a7d4e3; }
 .navbar-container .navbar-content .right .mobile i { color: #f3f7fb !important; }
-.navbar-container .navbar-content .right .mobile .navbar-bar .bar { background: #f3f7fb !important; }
+.navbar-container .navbar-bar-middle, .navbar-container .navbar-bar-middle::before, .navbar-container .navbar-bar-middle::after { background: #f3f7fb !important; }
+.navbar-drawer-show .navbar-container .navbar-bar-middle { background: transparent !important; }
 .home-article-thumbnail { height: 220px !important; }
 .home-article-title { font-size: 1.55rem; }
 .home-article-item { margin-bottom: 28px; }
