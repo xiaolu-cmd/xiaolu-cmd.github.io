@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="keywords" content="Hexo Theme Redefine">
+    
+    
+    <meta name="author" content="xiaolu-cmd">
+    
+    <!-- Completely eliminate flash of wrong theme -->
+    <script>
+        (function() {
+            const THEME_KEY = "REDEFINE-THEME-STATUS";
+            const DARK = "dark", LIGHT = "light";
+            
+            // Get preferred theme
+            function getTheme() {
+                try {
+                    const saved = localStorage.getItem(THEME_KEY);
+                    if (saved) {
+                        const { isDark } = JSON.parse(saved);
+                        return isDark ? DARK : LIGHT;
+                    }
+                } catch (e) {}
+                
+                return matchMedia("(prefers-color-scheme: dark)").matches ? DARK : LIGHT;
+            }
+            
+            // Apply theme to document
+            function applyTheme(theme) {
+                const isDark = theme === DARK;
+                const root = document.documentElement;
+                
+                // Set classes for compatibility
+                root.classList.add(theme);
+                root.classList.remove(isDark ? LIGHT : DARK);
+                root.style.colorScheme = theme;
+            }
+            
+            // Initial application
+            const theme = getTheme();
+            applyTheme(theme);
+            
+            // Listen for system preference changes
+            matchMedia("(prefers-color-scheme: dark)").addEventListener("change", ({ matches }) => {
+                // Only update if using system preference (no localStorage entry)
+                if (!localStorage.getItem(THEME_KEY)) {
+                    applyTheme(matches ? DARK : LIGHT);
+                }
+            });
+            
+            // Set body classes ASAP (before DOMContentLoaded)
+            (function() {
+                const addBodyClass = () => {
+                    const b = document.body;
+                    if (!b) return false;
+                    b.classList.add(theme + "-mode");
+                    return true;
+                };
+
+                // Try immediately
+                if (addBodyClass()) return;
+
+                // Observe until body exists
+                const mo = new MutationObserver(() => {
+                    if (addBodyClass()) mo.disconnect();
+                });
+                mo.observe(document.documentElement, { childList: true, subtree: true });
+            })();
+        })();
+    </script>
+    
+    <!-- preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    
+    <!--- Seo Part-->
+    
+    <link rel="canonical" href="https://xiaolu-cmd.github.io/2026/11/01/cc1-study-notes/"/>
+    <meta name="robots" content="index,follow">
+    <meta name="googlebot" content="index,follow">
+    <meta name="revisit-after" content="1 days">
+    
+    
+        
+        <meta name="description" content="网络安全学习笔记，以及一些有趣的发现。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java 反序列化漏洞：CommonsCollections1（CC1）学习笔记">
+<meta property="og:url" content="https://xiaolu-cmd.github.io/2026/11/01/cc1-study-notes/index.html">
+<meta property="og:site_name" content="xiaolu-cmd&#39;s Blog">
+<meta property="og:description" content="网络安全学习笔记，以及一些有趣的发现。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://xiaolu-cmd.github.io/assets/hero.webp">
+<meta property="article:published_time" content="2026-11-01T13:30:10.000Z">
+<meta property="article:modified_time" content="2026-11-01T13:30:10.000Z">
+<meta property="article:author" content="xiaolu-cmd">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="反序列化">
+<meta property="article:tag" content="CC1">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://xiaolu-cmd.github.io/assets/hero.webp">
+    
+    
+    <!--- Icon Part-->
+    <link rel="icon" type="image/png" href="/assets/favicon.png" sizes="192x192">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon.png">
+    <meta name="theme-color" content="#447f9e">
+    <link rel="shortcut icon" href="/assets/favicon.png">
+    <!--- Page Info-->
+    
+    <title>
+        
+            Java 反序列化漏洞：CommonsCollections1（CC1）学习笔记 | xiaolu-cmd&#39;s Blog
+        
+    </title>
+
+    
+<link rel="stylesheet" href="/fonts/Chillax/chillax.css">
+
+
+    <!--- Inject Part-->
+    
+        
+            
+    
+            
+    
+            
+                
+                    <link rel="stylesheet" href="/assets/custom.css">
+            
+    
+            
+                
+                    <link rel="preload" as="image" href="/assets/hero.webp" fetchpriority="high">
+            
+    
+
+    
+<link rel="stylesheet" href="/css/style.css">
+
+
+    
+        
+<link rel="stylesheet" href="/css/build/tailwind.css">
+
+    
+
+    
+<link rel="stylesheet" href="/fonts/GeistMono/geist-mono.css">
+
+    
+<link rel="stylesheet" href="/fonts/Geist/geist.css">
+
+    <!--- Font Part-->
+    
+    
+    
+    
+    
+    
+
+    <script id="hexo-configurations">
+    window.config = {"hostname":"xiaolu-cmd.github.io","root":"/","language":"zh-CN","path":"search.xml"};
+    window.theme = {"articles":{"style":{"font_size":"17px","line_height":1.85,"image_border_radius":"14px","image_alignment":"center","image_caption":false,"link_icon":true,"delete_mask":false,"title_alignment":"left","headings_top_spacing":{"h1":"3.2rem","h2":"2.4rem","h3":"1.9rem","h4":"1.6rem","h5":"1.4rem","h6":"1.3rem"}},"word_count":{"enable":false,"count":false,"min2read":false},"author_label":{"enable":false,"auto":false,"list":[]},"code_block":{"copy":true,"style":"mac","highlight_theme":{"light":"github","dark":"vs2015"},"font":{"enable":false,"family":null,"url":null}},"toc":{"enable":true,"max_depth":3,"number":false,"expand":true,"init_open":true},"copyright":{"enable":false,"default":"cc_by_nc_sa"},"lazyload":true,"pangu_js":false,"recommendation":{"enable":false,"title":"推荐阅读","limit":3,"mobile_limit":2,"placeholder":"/images/wallhaven-wqery6-light.webp","skip_dirs":[]}},"colors":{"primary":"#447f9e","secondary":null,"default_mode":"light"},"global":{"fonts":{"chinese":{"enable":false,"family":null,"url":null},"english":{"enable":false,"family":null,"url":null},"title":{"enable":false,"family":null,"url":null}},"content_max_width":"1080px","sidebar_width":"210px","hover":{"shadow":true,"scale":false},"scroll_progress":{"bar":false,"percentage":true},"website_counter":{"url":"https://cn.vercount.one/js","enable":false,"site_pv":false,"site_uv":false,"post_pv":false},"single_page":false,"preloader":{"enable":false,"custom_message":null},"side_tools":{"gear_rotation":true,"auto_expand":false},"open_graph":{"enable":true,"image":"/assets/hero.webp","description":"网络安全学习笔记，以及一些有趣的发现。"},"google_analytics":{"enable":false,"id":null}},"home_banner":{"enable":true,"style":"static","image":{"light":"/assets/hero.webp","dark":"/assets/hero.webp"},"title":"保持好奇，持续探索。","subtitle":{"text":["网络安全 · 学习笔记 · 有趣的发现"],"hitokoto":{"enable":false,"show_author":false,"api":"https://v1.hitokoto.cn"},"typing_speed":70,"backing_speed":80,"starting_delay":500,"backing_delay":1500,"loop":false,"smart_backspace":true},"text_color":{"light":"#ffffff","dark":"#ffffff"},"text_style":{"title_size":"3.6rem","subtitle_size":"1.15rem","line_height":1.2},"custom_font":{"enable":false,"family":null,"url":null},"social_links":{"enable":true,"style":"default","links":[{"icon":"fa-brands fa-github","url":"https://github.com/xiaolu-cmd"},{"icon":"fa-brands fa-twitter","url":null},{"icon":"fa-solid fa-at","url":null},{"icon":"fa-brands fa-telegram","url":null},{"icon":"/images/custom-icon.svg","url":null}],"qrs":[{"icon":"fa-brands fa-weixin","qr":null},{"icon":"/images/custom-icon.svg","qr":null}]}},"plugins":{"feed":{"enable":false},"aplayer":{"enable":false,"type":"fixed","audios":[{"name":null,"artist":null,"url":null,"cover":null,"lrc":null}]},"mermaid":{"enable":false,"version":"11.4.1","theme":{"light":"default","dark":"dark"}}},"version":"2.9.0","navbar":{"auto_hide":false,"color":{"left":"#24384c","right":"#447f9e","transparency":60},"width":{"home":"1200px","pages":"1000px"},"links":{"Home":{"path":"/","icon":"fa-solid fa-house"},"Archives":{"path":"/archives/","icon":"fa-solid fa-box-archive"},"About":{"path":"/about/","icon":"fa-solid fa-user"}},"search":{"enable":true,"preload":false}},"page_templates":{"friends_column":2,"tags_style":"blur","masonry":{"batch_size":12,"initial_batch_size":24}},"home":{"sidebar":{"enable":false,"position":"left","first_item":"menu","announcement":null,"show_on_mobile":true,"links":null},"article_date_format":"YYYY-MM-DD","excerpt_length":110,"categories":{"enable":true,"limit":3},"tags":{"enable":true,"limit":3}},"footer":{"runtime":false,"icon":"<i class=\"fa-solid fa-mountain-sun\"></i>","start":"2025/07/16 16:20:45","statistics":false,"customize":"记录探索，保持好奇。","icp":{"enable":false,"number":null,"url":null}},"footerStart":"2025/07/16 16:20:45","mermaid":{"style":{"light":"default","dark":"dark"}}};
+    window.lang_ago = {"second":"%s 秒前","minute":"%s 分钟前","hour":"%s 小时前","day":"%s 天前","week":"%s 周前","month":"%s 个月前","year":"%s 年前"};
+    window.i18n = {"search":"站内搜索您需要的内容...","toc":"目录","prev":"上一页","next":"下一页","prev_posts":"上一篇","next_posts":"下一篇","page":"第 %d 页","recent_posts":"最新文章","share":"分享","powered_by":"由 %s 驱动","theme":"主题","rss_feed":"RSS Feed","category":"分类","categories":"分类","tag":"标签","tags":"标签","post":"文章","posts":"文章","tagcloud":"标签云","comment":"评论","comments":"评论","top":"置顶","sticky":"置顶","go-back-home":"回到首页","masonry_loading":"照片加载中...","image_viewer":"图片查看器","close":"关闭","exif":{"title":"EXIF","cards":{"camera":"相机","lens":"镜头","exposure":"曝光","other":"其他"},"fields":{"make":"品牌","model":"机型","date_taken":"拍摄时间","lens_model":"镜头","focal_length":"焦距","focus_mode":"对焦模式","shutter":"快门","aperture":"光圈","iso":"感光度","exposure_program":"曝光程序","exposure_compensation":"曝光补偿","metering_mode":"测光模式","flash":"闪光灯","white_balance":"白平衡","latitude":"纬度","longitude":"经度","altitude":"海拔"},"status":{"loading":"加载中...","no_exif":"无 EXIF 信息","library_missing":"EXIF 库未加载","image_source_missing":"图片地址不可用","unavailable":"EXIF 不可用（可能被 CORS 阻止或缺少元数据）","flag_unavailable":"EXIF 不可用"}},"home":"首页","archive":"归档","archives":"归档","about":"关于","links":"链接","link":"链接","friends":"友情链接","friend":"友情链接","timeline":"时间轴","shuoshuo":"说说","bookmarks":"书签","site_uv":"访问人数","site_pv":"总访问量","read_more":"阅读全文","wordcount":"字","min2read":"分钟","changelog":"更新日志","status":"状态","runtime":"博客已运行","days":"天","hours":"小时","minutes":"分钟","seconds":"秒","optimized_by":"并由 Evan 进行优化","rights":"版权所有","site_posts":"共撰写了 %s 篇文章","site_wordcount":"共 %s 字","copyright":{"title":"标题","author":"作者","link":"链接","create_time":"创建于","update_time":"更新于","license_title":"版权声明","license_content":"本文章采用 %s 进行许可。","all_rights_reserved":"版权所有 &#169 %s，禁止转载。","public_domain":"本文为公有领域作品，可自由转载、引用。"},"ago":{"second":"%s 秒前","minute":"%s 分钟前","hour":"%s 小时前","day":"%s 天前","week":"%s 周前","month":"%s 个月前","year":"%s 年前"},"create_time":"创建","update_time":"更新","expired":"这篇文章最后更新于 %s 天前，内容可能已经过时。"};
+    window.data = {"masonry":false};
+  </script>
+    
+    <!--- Fontawesome Part-->
+    
+<link rel="stylesheet" href="/fontawesome/fontawesome.min.css">
+
+    
+<link rel="stylesheet" href="/fontawesome/brands.min.css">
+
+    
+<link rel="stylesheet" href="/fontawesome/solid.min.css">
+
+    
+<link rel="stylesheet" href="/fontawesome/regular.min.css">
+
+    
+    
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<body>
+	<div class="progress-bar-container">
+	
+
+	
+</div>
+
+<main class="page-container" id="swup">
+
+	
+
+	<div class="main-content-container flex flex-col justify-between min-h-dvh">
+		<div class="main-content-header">
+			<header class="navbar-container px-6 md:px-12">
+    <div class="navbar-content transition-navbar ">
+        <div class="left">
+            
+            <a class="logo-title" href="/">
+                
+                xiaolu-cmd&#39;s Blog
+                
+            </a>
+        </div>
+
+        <div class="right">
+            <!-- PC -->
+            <div class="desktop">
+                <ul class="navbar-list">
+                    
+                        
+                            
+
+                            <li class="navbar-item">
+                                <!-- Menu -->
+                                <a class=""
+                                   href="/"
+                                        >
+                                    <i class="fa-solid fa-house fa-fw"></i>
+                                    首页
+                                    
+                                </a>
+
+                                <!-- Submenu -->
+                                
+                            </li>
+                    
+                        
+                            
+
+                            <li class="navbar-item">
+                                <!-- Menu -->
+                                <a class=""
+                                   href="/archives/"
+                                        >
+                                    <i class="fa-solid fa-box-archive fa-fw"></i>
+                                    归档
+                                    
+                                </a>
+
+                                <!-- Submenu -->
+                                
+                            </li>
+                    
+                        
+                            
+
+                            <li class="navbar-item">
+                                <!-- Menu -->
+                                <a class=""
+                                   href="/about/"
+                                        >
+                                    <i class="fa-solid fa-user fa-fw"></i>
+                                    关于
+                                    
+                                </a>
+
+                                <!-- Submenu -->
+                                
+                            </li>
+                    
+                    
+                        <li class="navbar-item search search-popup-trigger">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </li>
+                    
+                </ul>
+            </div>
+            <!-- Mobile -->
+            <div class="mobile">
+                
+                    <div class="icon-item search search-popup-trigger"><i class="fa-solid fa-magnifying-glass"></i>
+                    </div>
+                
+                <div class="icon-item navbar-bar">
+                    <div class="navbar-bar-middle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile sheet -->
+    <div class="navbar-drawer h-dvh w-full absolute top-0 left-0 bg-background-color flex flex-col justify-between">
+        <ul class="drawer-navbar-list flex flex-col px-4 justify-center items-start">
+            
+                
+                    
+
+                    <li class="drawer-navbar-item text-base my-1.5 flex flex-col w-full">
+                        
+                        <a class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary text-2xl font-semibold group border-b border-border-color hover:border-primary w-full "
+                           href="/"
+                        >
+                            <span>
+                                首页
+                            </span>
+                            
+                                <i class="fa-solid fa-house fa-sm fa-fw"></i>
+                            
+                        </a>
+                        
+
+                        
+                    </li>
+            
+                
+                    
+
+                    <li class="drawer-navbar-item text-base my-1.5 flex flex-col w-full">
+                        
+                        <a class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary text-2xl font-semibold group border-b border-border-color hover:border-primary w-full "
+                           href="/archives/"
+                        >
+                            <span>
+                                归档
+                            </span>
+                            
+                                <i class="fa-solid fa-box-archive fa-sm fa-fw"></i>
+                            
+                        </a>
+                        
+
+                        
+                    </li>
+            
+                
+                    
+
+                    <li class="drawer-navbar-item text-base my-1.5 flex flex-col w-full">
+                        
+                        <a class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary text-2xl font-semibold group border-b border-border-color hover:border-primary w-full "
+                           href="/about/"
+                        >
+                            <span>
+                                关于
+                            </span>
+                            
+                                <i class="fa-solid fa-user fa-sm fa-fw"></i>
+                            
+                        </a>
+                        
+
+                        
+                    </li>
+            
+
+            
+            
+        </ul>
+
+        <div class="statistics flex justify-around my-2.5">
+    <a class="item tag-count-item flex flex-col justify-center items-center w-20" href="/tags">
+        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">6</div>
+        <div class="label text-third-text-color text-sm">标签</div>
+    </a>
+    <a class="item tag-count-item flex flex-col justify-center items-center w-20" href="/categories">
+        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">2</div>
+        <div class="label text-third-text-color text-sm">分类</div>
+    </a>
+    <a class="item tag-count-item flex flex-col justify-center items-center w-20" href="/archives">
+        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">8</div>
+        <div class="label text-third-text-color text-sm">文章</div>
+    </a>
+</div>
+    </div>
+
+    <div class="window-mask"></div>
+
+</header>
+
+
+		</div>
+
+		<div class="main-content-body transition-fade-up">
+			
+
+			<div class="main-content">
+				<div class="post-page-container flex relative justify-between box-border w-full h-full">
+	<div class="article-content-container">
+
+		<div class="article-title relative w-full">
+			
+			<div class="w-full flex items-center pt-6 justify-start">
+				<h1 class="article-title-regular text-second-text-color tracking-tight text-4xl md:text-6xl font-semibold px-2 sm:px-6 md:px-8 py-3">Java 反序列化漏洞：CommonsCollections1（CC1）学习笔记</h1>
+			</div>
+			
+		</div>
+
+		
+		<div class="article-header flex flex-row gap-2 items-center px-2 sm:px-6 md:px-8">
+			<div class="avatar w-[46px] h-[46px] shrink-0 rounded-medium border border-border-color p-px">
+				<img src="/assets/avatar.svg">
+			</div>
+			<div class="info flex flex-col justify-between">
+				<div class="author flex items-center">
+					<span class="name text-default-text-color text-lg font-semibold">xiaolu-cmd</span>
+					
+				</div>
+				<div class="meta-info">
+					<div class="article-meta-info">
+    <span class="article-date article-meta-item">
+        <i class="fa-regular fa-pen-fancy"></i>&nbsp;
+        <span class="desktop">2026-11-01 21:30:10</span>
+        <span class="mobile">2026-11-01 21:30:10</span>
+        <span class="hover-info">创建</span>
+    </span>
+    
+        <span class="article-date article-meta-item">
+            <i class="fa-regular fa-wrench"></i>&nbsp;
+            <span class="desktop">2026-11-01 21:30:10</span>
+            <span class="mobile">2026-11-01 21:30:10</span>
+            <span class="hover-info">更新</span>
+        </span>
+    
+
+    
+        <span class="article-categories article-meta-item">
+            <i class="fa-regular fa-folders"></i>&nbsp;
+            <ul>
+                
+                
+                    
+                        
+                        <li>
+                            <a href="/categories/%E5%AE%89%E5%85%A8%E5%AD%A6%E4%B9%A0/">安全学习</a>&nbsp;
+                        </li>
+                    
+                    
+                
+                    
+                        
+                            <li>></li>
+                        
+                        <li>
+                            <a href="/categories/%E5%AE%89%E5%85%A8%E5%AD%A6%E4%B9%A0/Java-%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/">Java 反序列化</a>&nbsp;
+                        </li>
+                    
+                    
+                
+            </ul>
+        </span>
+    
+    
+        <span class="article-tags article-meta-item">
+            <i class="fa-regular fa-tags"></i>&nbsp;
+            <ul>
+                
+                    <li>
+                        <a href="/tags/Java/">Java</a>&nbsp;
+                    </li>
+                
+                    <li>
+                        | <a href="/tags/%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/">反序列化</a>&nbsp;
+                    </li>
+                
+                    <li>
+                        | <a href="/tags/CC1/">CC1</a>&nbsp;
+                    </li>
+                
+            </ul>
+        </span>
+    
+
+    
+    
+    
+    
+</div>
+
+				</div>
+			</div>
+		</div>
+		
+
+		
+
+
+		<div class="article-content markdown-body px-2 sm:px-6 md:px-8 pb-8">
+			<blockquote>
+<p><strong>实验环境</strong></p>
+<ul>
+<li><p>JDK：1.8.0_65</p>
+</li>
+<li><p>IDE：IntelliJ IDEA</p>
+</li>
+<li><p>依赖：Commons Collections 3.2.1</p>
+</li>
+<li><p>研究对象：CC1 LazyMap + 动态代理调用链</p>
+</li>
+<li><p>参考项目：<a class="link"   target="_blank" rel="noopener" href="https://github.com/frohoff/ysoserial" >ysoserial<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
+</li>
+<li><p>注意：经典 CC1 依赖历史 JDK 行为，JDK 8u71 之后的相关修复会阻断经典路径。</p>
+</li>
+</ul>
+</blockquote>
+<h2 id="一、Commons-Collections-简介"><a href="#一、Commons-Collections-简介" class="headerlink" title="一、Commons Collections 简介"></a>一、Commons Collections 简介</h2><p>Apache Commons Collections 是对 Java 集合框架的扩展，提供额外的集合操作功能。</p>
+<p>CC1 中涉及的主要类：</p>
+<table>
+<thead>
+<tr>
+<th>类</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Transformer</td>
+<td>对象转换接口</td>
+</tr>
+<tr>
+<td>ConstantTransformer</td>
+<td>返回指定常量</td>
+</tr>
+<tr>
+<td>InvokerTransformer</td>
+<td>通过反射调用方法</td>
+</tr>
+<tr>
+<td>ChainedTransformer</td>
+<td>串联多个 Transformer</td>
+</tr>
+<tr>
+<td>LazyMap</td>
+<td>键不存在时触发 Transformer</td>
+</tr>
+<tr>
+<td>AnnotationInvocationHandler</td>
+<td>JDK 内部注解调用处理器</td>
+</tr>
+<tr>
+<td>Proxy</td>
+<td>Java 动态代理</td>
+</tr>
+</tbody></table>
+<p>核心原理：通过反序列化恢复对象时产生的方法调用，间接触发第三方集合类中的 Transformer。</p>
+<hr>
+<h2 id="二、Transformer-接口"><a href="#二、Transformer-接口" class="headerlink" title="二、Transformer 接口"></a>二、Transformer 接口</h2><h3 id="2-1-接口定义"><a href="#2-1-接口定义" class="headerlink" title="2.1 接口定义"></a>2.1 接口定义</h3><div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">Transformer</span> &#123;<br>    <span class="hljs-type">Object</span> <span class="hljs-title function_">transform</span><span class="hljs-params">(Object input)</span>;<br>&#125;<br></code></pre></td></tr></table></figure></div>
+
+<ul>
+<li><p>返回值 <code>Object</code>：转换后的对象。</p>
+</li>
+<li><p>参数 <code>Object input</code>：当前 Transformer 接收的对象。</p>
+</li>
+</ul>
+<p>使用 <code>Object</code> 类型可以让转换器处理多种引用类型。</p>
+<h3 id="2-2-ConstantTransformer"><a href="#2-2-ConstantTransformer" class="headerlink" title="2.2 ConstantTransformer"></a>2.2 ConstantTransformer</h3><p>核心源码：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Object iConstant;<br><br><span class="hljs-type">public</span> <span class="hljs-title function_">ConstantTransformer</span><span class="hljs-params">(Object constantToReturn)</span> &#123;<br>    <span class="hljs-built_in">super</span>();<br>    iConstant = constantToReturn;<br>&#125;<br><br><span class="hljs-keyword">public</span> <span class="hljs-type">Object</span> <span class="hljs-title function_">transform</span><span class="hljs-params">(Object input)</span> &#123;<br>    <span class="hljs-keyword">return</span> iConstant;<br>&#125;<br></code></pre></td></tr></table></figure></div>
+
+<p>特点：</p>
+<ol>
+<li><p>构造方法将传入的常量保存到 <code>iConstant</code> 字段。</p>
+</li>
+<li><p><code>transform()</code> 不使用 <code>input</code>。</p>
+</li>
+<li><p>每次调用均返回对象内部保存的 <code>iConstant</code>。</p>
+</li>
+</ol>
+<p>示例：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">Transformer</span> <span class="hljs-variable">t</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ConstantTransformer</span>(<span class="hljs-string">&quot;hello&quot;</span>);<br><br>System.out.println(t.transform(<span class="hljs-string">&quot;abc&quot;</span>));<br></code></pre></td></tr></table></figure></div>
+
+<p>输出：</p>
+<div class="code-container" data-rel="Text"><figure class="iseeu highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">hello<br></code></pre></td></tr></table></figure></div>
+
+<p><strong>实例字段与方法参数的区别：</strong></p>
+<ul>
+<li><p><code>iConstant</code> 是创建对象时保存的状态。</p>
+</li>
+<li><p><code>input</code> 是调用 <code>transform()</code> 时传入的参数。</p>
+</li>
+</ul>
+<p>不同 ConstantTransformer 实例可以保存不同的 <code>iConstant</code>。</p>
+<h3 id="2-3-InvokerTransformer"><a href="#2-3-InvokerTransformer" class="headerlink" title="2.3 InvokerTransformer"></a>2.3 InvokerTransformer</h3><p>构造方法示例：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">Transformer</span> <span class="hljs-variable">t</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">InvokerTransformer</span>(<br>    <span class="hljs-string">&quot;toUpperCase&quot;</span>,<br>    <span class="hljs-keyword">new</span> <span class="hljs-title class_">Class</span>[]&#123;&#125;,<br>    <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>[]&#123;&#125;<br>);<br><br><span class="hljs-type">Object</span> <span class="hljs-variable">result</span> <span class="hljs-operator">=</span> t.transform(<span class="hljs-string">&quot;hello&quot;</span>);<br></code></pre></td></tr></table></figure></div>
+
+<p>结果：</p>
+<div class="code-container" data-rel="Text"><figure class="iseeu highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">HELLO<br></code></pre></td></tr></table></figure></div>
+
+<p>核心源码逻辑：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">Class</span> <span class="hljs-variable">cls</span> <span class="hljs-operator">=</span> input.getClass();<br><br><span class="hljs-type">Method</span> <span class="hljs-variable">method</span> <span class="hljs-operator">=</span> cls.getMethod(<br>    iMethodName,<br>    iParamTypes<br>);<br><br><span class="hljs-keyword">return</span> method.invoke(input, iArgs);<br></code></pre></td></tr></table></figure></div>
+
+<p>变量含义：</p>
+<table>
+<thead>
+<tr>
+<th>字段或变量</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>input</td>
+<td>被调用方法所属的对象</td>
+</tr>
+<tr>
+<td>iMethodName</td>
+<td>指定的方法名</td>
+</tr>
+<tr>
+<td>iParamTypes</td>
+<td>方法形参类型数组</td>
+</tr>
+<tr>
+<td>iArgs</td>
+<td>方法实际参数数组</td>
+</tr>
+<tr>
+<td>cls</td>
+<td>输入对象对应的 Class</td>
+</tr>
+<tr>
+<td>method</td>
+<td>通过反射找到的方法</td>
+</tr>
+</tbody></table>
+<p>例如：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">new</span> <span class="hljs-title class_">InvokerTransformer</span>(<br>    <span class="hljs-string">&quot;substring&quot;</span>,<br>    <span class="hljs-keyword">new</span> <span class="hljs-title class_">Class</span>[]&#123;<span class="hljs-type">int</span>.class&#125;,<br>    <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>[]&#123;<span class="hljs-number">6</span>&#125;<br>);<br></code></pre></td></tr></table></figure></div>
+
+<p>当输入为 <code>&quot;hello java&quot;</code> 时，相当于：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-string">&quot;hello java&quot;</span>.substring(<span class="hljs-number">6</span>);<br></code></pre></td></tr></table></figure></div>
+
+<p>返回：</p>
+<div class="code-container" data-rel="Text"><figure class="iseeu highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">java<br></code></pre></td></tr></table></figure></div>
+
+<p>注意：</p>
+<ul>
+<li><p><code>int.class</code> 表示方法参数类型。</p>
+</li>
+<li><p><code>new Object[]&#123;6&#125;</code> 表示实际参数。</p>
+</li>
+<li><p><code>substring()</code> 属于 String 类，不属于 int 类。</p>
+</li>
+</ul>
+<h3 id="2-4-ChainedTransformer"><a href="#2-4-ChainedTransformer" class="headerlink" title="2.4 ChainedTransformer"></a>2.4 ChainedTransformer</h3><p>核心源码：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-type">Object</span> <span class="hljs-title function_">transform</span><span class="hljs-params">(Object object)</span> &#123;<br>    <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; iTransformers.length; i++) &#123;<br>        object = iTransformers[i].transform(object);<br>    &#125;<br><br>    <span class="hljs-keyword">return</span> object;<br>&#125;<br></code></pre></td></tr></table></figure></div>
+
+<p>作用：按顺序执行数组中的 Transformer。</p>
+<p>示例：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">Transformer</span>[] <span class="hljs-variable">transformers</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Transformer</span>[]&#123;<br>    <span class="hljs-keyword">new</span> <span class="hljs-title class_">ConstantTransformer</span>(<span class="hljs-string">&quot;abcdef&quot;</span>),<br>    <span class="hljs-keyword">new</span> <span class="hljs-title class_">InvokerTransformer</span>(<br>        <span class="hljs-string">&quot;substring&quot;</span>,<br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Class</span>[]&#123;<span class="hljs-type">int</span>.class&#125;,<br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>[]&#123;<span class="hljs-number">2</span>&#125;<br>    ),<br>    <span class="hljs-keyword">new</span> <span class="hljs-title class_">InvokerTransformer</span>(<br>        <span class="hljs-string">&quot;toUpperCase&quot;</span>,<br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Class</span>[]&#123;&#125;,<br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>[]&#123;&#125;<br>    )<br>&#125;;<br></code></pre></td></tr></table></figure></div>
+
+<p>调用：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">Transformer</span> <span class="hljs-variable">chain</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ChainedTransformer</span>(transformers);<br><span class="hljs-type">Object</span> <span class="hljs-variable">result</span> <span class="hljs-operator">=</span> chain.transform(<span class="hljs-string">&quot;hello&quot;</span>);<br></code></pre></td></tr></table></figure></div>
+
+<p>执行过程：</p>
+<div class="code-container" data-rel="Text"><figure class="iseeu highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs text">&quot;hello&quot;<br>   ↓<br>ConstantTransformer<br>   ↓<br>&quot;abcdef&quot;<br>   ↓<br>InvokerTransformer.substring(2)<br>   ↓<br>&quot;cdef&quot;<br>   ↓<br>InvokerTransformer.toUpperCase()<br>   ↓<br>&quot;CDEF&quot;<br></code></pre></td></tr></table></figure></div>
+
+<p>结论：</p>
+<p><strong>每个 Transformer 的输出都是下一个 Transformer 的输入。</strong></p>
+<p><code>ChainedTransformer</code> 使用的是循环调用，不是递归。</p>
+<hr>
+<h2 id="三、LazyMap-的触发机制"><a href="#三、LazyMap-的触发机制" class="headerlink" title="三、LazyMap 的触发机制"></a>三、LazyMap 的触发机制</h2><h3 id="3-1-LazyMap-的作用"><a href="#3-1-LazyMap-的作用" class="headerlink" title="3.1 LazyMap 的作用"></a>3.1 LazyMap 的作用</h3><p>普通 HashMap：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">Map</span> <span class="hljs-variable">map</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">HashMap</span>();<br>map.get(<span class="hljs-string">&quot;name&quot;</span>);<br></code></pre></td></tr></table></figure></div>
+
+<p>键不存在时，返回 <code>null</code>。</p>
+<p>LazyMap 则可以在键不存在时，通过 Transformer 自动生成值。</p>
+<p>示例：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">Map</span> <span class="hljs-variable">innerMap</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">HashMap</span>();<br><br><span class="hljs-type">Transformer</span> <span class="hljs-variable">transformer</span> <span class="hljs-operator">=</span><br>    <span class="hljs-keyword">new</span> <span class="hljs-title class_">ConstantTransformer</span>(<span class="hljs-string">&quot;Hello LazyMap&quot;</span>);<br><br><span class="hljs-type">Map</span> <span class="hljs-variable">lazyMap</span> <span class="hljs-operator">=</span> LazyMap.decorate(<br>    innerMap,<br>    transformer<br>);<br></code></pre></td></tr></table></figure></div>
+
+<h3 id="3-2-LazyMap-get-源码"><a href="#3-2-LazyMap-get-源码" class="headerlink" title="3.2 LazyMap.get() 源码"></a>3.2 LazyMap.get() 源码</h3><div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-type">Object</span> <span class="hljs-title function_">get</span><span class="hljs-params">(Object key)</span> &#123;<br><br>    <span class="hljs-keyword">if</span> (map.containsKey(key) == <span class="hljs-literal">false</span>) &#123;<br><br>        <span class="hljs-type">Object</span> <span class="hljs-variable">value</span> <span class="hljs-operator">=</span> factory.transform(key);<br><br>        map.put(key, value);<br><br>        <span class="hljs-keyword">return</span> value;<br>    &#125;<br><br>    <span class="hljs-keyword">return</span> map.get(key);<br>&#125;<br></code></pre></td></tr></table></figure></div>
+
+<p>执行过程：</p>
+<div class="code-container" data-rel="Text"><figure class="iseeu highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs text">lazyMap.get(&quot;name&quot;)<br>       ↓<br>map.containsKey(&quot;name&quot;)<br>       ↓<br>键不存在<br>       ↓<br>factory.transform(&quot;name&quot;)<br>       ↓<br>获得转换结果<br>       ↓<br>map.put(&quot;name&quot;, value)<br>       ↓<br>return value<br></code></pre></td></tr></table></figure></div>
+
+<p>触发条件：</p>
+<ul>
+<li><p>如果键不存在，执行 Transformer 并保存生成的值。</p>
+</li>
+<li><p>如果键已经存在，直接返回保存的值，不再执行 Transformer。</p>
+</li>
+</ul>
+<p>注意：即使某个键对应的值是 <code>null</code>，只要该键存在，<code>containsKey()</code> 仍然为 <code>true</code>。</p>
+<h3 id="3-3-factory-与-transformer-的关系"><a href="#3-3-factory-与-transformer-的关系" class="headerlink" title="3.3 factory 与 transformer 的关系"></a>3.3 factory 与 transformer 的关系</h3><div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">Transformer</span> <span class="hljs-variable">transformer</span> <span class="hljs-operator">=</span><br>    <span class="hljs-keyword">new</span> <span class="hljs-title class_">ConstantTransformer</span>(<span class="hljs-string">&quot;Hello LazyMap&quot;</span>);<br><br><span class="hljs-type">Map</span> <span class="hljs-variable">lazyMap</span> <span class="hljs-operator">=</span> LazyMap.decorate(<br>    <span class="hljs-keyword">new</span> <span class="hljs-title class_">HashMap</span>(),<br>    transformer<br>);<br></code></pre></td></tr></table></figure></div>
+
+<p><code>decorate()</code>：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-type">Map</span> <span class="hljs-title function_">decorate</span><span class="hljs-params">(Map map, Transformer factory)</span> &#123;<br>    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">LazyMap</span>(map, factory);<br>&#125;<br></code></pre></td></tr></table></figure></div>
+
+<p>构造方法：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">protected</span> <span class="hljs-title function_">LazyMap</span><span class="hljs-params">(Map map, Transformer factory)</span> &#123;<br>    <span class="hljs-built_in">super</span>(map);<br>    <span class="hljs-built_in">this</span>.factory = factory;<br>&#125;<br></code></pre></td></tr></table></figure></div>
+
+<p>这里的 <code>transformer</code> 和 <code>factory</code> 不是两个新对象，而是两个指向同一个 Transformer 实例的引用。</p>
+<p><code>this.factory</code> 将该引用保存到 LazyMap 内部。</p>
+<p>因此以后执行：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs java">factory.transform(key);<br></code></pre></td></tr></table></figure></div>
+
+<p>就能调用我们创建的 Transformer。</p>
+<hr>
+<h2 id="四、Java-动态代理"><a href="#四、Java-动态代理" class="headerlink" title="四、Java 动态代理"></a>四、Java 动态代理</h2><h3 id="4-1-Proxy-与-InvocationHandler"><a href="#4-1-Proxy-与-InvocationHandler" class="headerlink" title="4.1 Proxy 与 InvocationHandler"></a>4.1 Proxy 与 InvocationHandler</h3><p>动态代理涉及两个核心对象：</p>
+<p><strong>Proxy：代理对象</strong></p>
+<p>用于接收对接口方法的调用。</p>
+<p><strong>InvocationHandler：调用处理器</strong></p>
+<p>决定代理对象的方法被调用时，具体执行什么逻辑。</p>
+<p>示例：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">InvocationHandler</span> <span class="hljs-variable">handler</span> <span class="hljs-operator">=</span> (proxy, method, args) -&gt; &#123;<br>    System.out.println(method.getName());<br>    <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;<br>&#125;;<br><br><span class="hljs-type">Map</span> <span class="hljs-variable">proxyMap</span> <span class="hljs-operator">=</span> (Map) Proxy.newProxyInstance(<br>    Map.class.getClassLoader(),<br>    <span class="hljs-keyword">new</span> <span class="hljs-title class_">Class</span>[]&#123;Map.class&#125;,<br>    handler<br>);<br></code></pre></td></tr></table></figure></div>
+
+<p>调用：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs java">proxyMap.entrySet();<br></code></pre></td></tr></table></figure></div>
+
+<p>会进入：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs java">handler.invoke(proxy, method, args);<br></code></pre></td></tr></table></figure></div>
+
+<p>其中 <code>method.getName()</code> 为：</p>
+<div class="code-container" data-rel="Text"><figure class="iseeu highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">entrySet<br></code></pre></td></tr></table></figure></div>
+
+<h3 id="4-2-invoke-的参数"><a href="#4-2-invoke-的参数" class="headerlink" title="4.2 invoke() 的参数"></a>4.2 invoke() 的参数</h3><div class="code-container" data-rel="Text"><figure class="iseeu highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs text">Object invoke(<br>    Object proxy,<br>    Method method,<br>    Object[] args<br>)<br></code></pre></td></tr></table></figure></div>
+
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>proxy</td>
+<td>接收方法调用的代理对象</td>
+</tr>
+<tr>
+<td>method</td>
+<td>被调用的接口方法</td>
+</tr>
+<tr>
+<td>args</td>
+<td>调用方法时传入的实际参数</td>
+</tr>
+</tbody></table>
+<p>例如：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs java">proxyMap.get(<span class="hljs-string">&quot;name&quot;</span>);<br></code></pre></td></tr></table></figure></div>
+
+<p>对应：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java">method.getName() = <span class="hljs-string">&quot;get&quot;</span><br>args[<span class="hljs-number">0</span>] = <span class="hljs-string">&quot;name&quot;</span><br></code></pre></td></tr></table></figure></div>
+
+<p>而：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs java">proxyMap.entrySet();<br></code></pre></td></tr></table></figure></div>
+
+<p>对应：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java">method.getName() = <span class="hljs-string">&quot;entrySet&quot;</span><br>args = <span class="hljs-literal">null</span><br></code></pre></td></tr></table></figure></div>
+
+<p>无参代理方法的 <code>args</code> 通常为 <code>null</code>。</p>
+<h3 id="4-3-两种-invoke-的区别"><a href="#4-3-两种-invoke-的区别" class="headerlink" title="4.3 两种 invoke() 的区别"></a>4.3 两种 invoke() 的区别</h3><p><strong>InvocationHandler.invoke()</strong></p>
+<p>处理代理对象的方法调用：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs java">handler.invoke(proxy, method, args);<br></code></pre></td></tr></table></figure></div>
+
+<p><strong>Method.invoke()</strong></p>
+<p>通过 Java 反射执行指定方法：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs java">method.invoke(target, args);<br></code></pre></td></tr></table></figure></div>
+
+<p>两者不是同一个方法。</p>
+<p>尤其需要注意：</p>
+<p><code>InvocationHandler.invoke()</code> 内部不一定必须使用反射。</p>
+<p>例如：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">InvocationHandler</span> <span class="hljs-variable">handler</span> <span class="hljs-operator">=</span> (proxy, method, args) -&gt; &#123;<br>    lazyMap.get(<span class="hljs-string">&quot;name&quot;</span>);<br>    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">HashSet</span>();<br>&#125;;<br></code></pre></td></tr></table></figure></div>
+
+<p>这里直接调用 <code>LazyMap.get()</code>，没有使用 <code>Method.invoke()</code>。</p>
+<h3 id="4-4-代理返回值类型"><a href="#4-4-代理返回值类型" class="headerlink" title="4.4 代理返回值类型"></a>4.4 代理返回值类型</h3><p>假设调用：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs java">proxyMap.entrySet();<br></code></pre></td></tr></table></figure></div>
+
+<p><code>Map.entrySet()</code> 的返回类型是 <code>Set</code>。</p>
+<p>如果 handler 返回 String，代理方法最终可能抛出 <code>ClassCastException</code>。</p>
+<p>但如果在返回值类型检查之前，handler 已经调用了 LazyMap，那么此前产生的副作用可能已经发生。</p>
+<p>结论：</p>
+<p><strong>方法最终抛出异常，不代表之前执行的操作没有发生。</strong></p>
+<hr>
+<h2 id="五、AnnotationInvocationHandler"><a href="#五、AnnotationInvocationHandler" class="headerlink" title="五、AnnotationInvocationHandler"></a>五、AnnotationInvocationHandler</h2><h3 id="5-1-类的作用"><a href="#5-1-类的作用" class="headerlink" title="5.1 类的作用"></a>5.1 类的作用</h3><p>JDK 8 中的内部类：</p>
+<div class="code-container" data-rel="Text"><figure class="iseeu highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">sun.reflect.annotation.AnnotationInvocationHandler<br></code></pre></td></tr></table></figure></div>
+
+<p>它实现：</p>
+<div class="code-container" data-rel="Text"><figure class="iseeu highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs text">InvocationHandler<br>Serializable<br></code></pre></td></tr></table></figure></div>
+
+<p>因此：</p>
+<ol>
+<li><p>可以作为动态代理的调用处理器。</p>
+</li>
+<li><p>可以作为 Java 序列化对象图的一部分。</p>
+</li>
+</ol>
+<h3 id="5-2-构造方法"><a href="#5-2-构造方法" class="headerlink" title="5.2 构造方法"></a>5.2 构造方法</h3><div class="code-container" data-rel="Text"><figure class="iseeu highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs text">AnnotationInvocationHandler(<br>    Class&lt;? extends Annotation&gt; type,<br>    Map&lt;String, Object&gt; memberValues<br>) &#123;<br>    this.type = type;<br>    this.memberValues = memberValues;<br>&#125;<br></code></pre></td></tr></table></figure></div>
+
+<p>两个重要字段：</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>type</td>
+<td>保存注解类型</td>
+</tr>
+<tr>
+<td>memberValues</td>
+<td>保存注解成员值的 Map 引用</td>
+</tr>
+</tbody></table>
+<h3 id="5-3-通过反射获取构造方法"><a href="#5-3-通过反射获取构造方法" class="headerlink" title="5.3 通过反射获取构造方法"></a>5.3 通过反射获取构造方法</h3><div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">Class</span>&lt;?&gt; <span class="hljs-variable">clazz</span> <span class="hljs-operator">=</span> Class.forName(<br>    <span class="hljs-string">&quot;sun.reflect.annotation.AnnotationInvocationHandler&quot;</span><br>);<br><br><span class="hljs-type">Constructor</span>&lt;?&gt; <span class="hljs-variable">constructor</span> <span class="hljs-operator">=</span><br>    clazz.getDeclaredConstructor(<br>        Class.class,<br>        Map.class<br>    );<br><br>constructor.setAccessible(<span class="hljs-literal">true</span>);<br></code></pre></td></tr></table></figure></div>
+
+<p>逐行解释：</p>
+<p><strong>Class.forName()</strong></p>
+<p>根据完整类名获取 Class 对象。</p>
+<p><strong>getDeclaredConstructor()</strong></p>
+<p>查找当前类声明的、形参类型为 <code>Class</code> 和 <code>Map</code> 的构造方法。</p>
+<p><strong>setAccessible(true)</strong></p>
+<p>请求绕过 Java 语言访问检查，以使用非公开构造方法。</p>
+<p>它不会把原始构造方法永久改为 <code>public</code>。</p>
+<h3 id="5-4-Constructor-newInstance"><a href="#5-4-Constructor-newInstance" class="headerlink" title="5.4 Constructor.newInstance()"></a>5.4 Constructor.newInstance()</h3><div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">InvocationHandler</span> <span class="hljs-variable">handlerB</span> <span class="hljs-operator">=</span><br>    (InvocationHandler) constructor.newInstance(<br>        Override.class,<br>        lazyMap<br>    );<br></code></pre></td></tr></table></figure></div>
+
+<p>这里才真正创建 Handler 实例。</p>
+<p>对应构造参数：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java">type = Override.<span class="hljs-keyword">class</span><br><span class="hljs-title class_">memberValues</span> = lazyMap<br></code></pre></td></tr></table></figure></div>
+
+<p>其中 <code>Override.class</code> 是 JDK 内置注解类型。</p>
+<p>创建对象时只进行初始化，不会自动执行 Handler 的 <code>invoke()</code>。</p>
+<hr>
+<h2 id="六、AnnotationInvocationHandler-invoke-源码"><a href="#六、AnnotationInvocationHandler-invoke-源码" class="headerlink" title="六、AnnotationInvocationHandler.invoke() 源码"></a>六、AnnotationInvocationHandler.invoke() 源码</h2><p>JDK 8u65 中反编译的变量名及含义：</p>
+<table>
+<thead>
+<tr>
+<th>变量</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>var1</td>
+<td>proxy</td>
+</tr>
+<tr>
+<td>var2</td>
+<td>method</td>
+</tr>
+<tr>
+<td>var3</td>
+<td>args</td>
+</tr>
+<tr>
+<td>var4</td>
+<td>methodName</td>
+</tr>
+<tr>
+<td>var5</td>
+<td>parameterTypes</td>
+</tr>
+<tr>
+<td>var6</td>
+<td>result</td>
+</tr>
+</tbody></table>
+<p>关键逻辑：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">String</span> <span class="hljs-variable">methodName</span> <span class="hljs-operator">=</span> method.getName();<br><span class="hljs-type">Class</span>[] <span class="hljs-variable">parameterTypes</span> <span class="hljs-operator">=</span> method.getParameterTypes();<br><br><span class="hljs-keyword">if</span> (methodName.equals(<span class="hljs-string">&quot;equals&quot;</span>)<br>        &amp;&amp; parameterTypes.length == <span class="hljs-number">1</span><br>        &amp;&amp; parameterTypes[<span class="hljs-number">0</span>] == Object.class) &#123;<br><br>    <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>.equalsImpl(args[<span class="hljs-number">0</span>]);<br><br>&#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (parameterTypes.length != <span class="hljs-number">0</span>) &#123;<br><br>    <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">AssertionError</span>(<br>        <span class="hljs-string">&quot;Too many parameters for an annotation method&quot;</span><br>    );<br>&#125;<br></code></pre></td></tr></table></figure></div>
+
+<p>随后判断：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">switch</span> (methodName) &#123;<br><br>    <span class="hljs-keyword">case</span> <span class="hljs-string">&quot;toString&quot;</span>:<br>        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>.toStringImpl();<br><br>    <span class="hljs-keyword">case</span> <span class="hljs-string">&quot;hashCode&quot;</span>:<br>        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>.hashCodeImpl();<br><br>    <span class="hljs-keyword">case</span> <span class="hljs-string">&quot;annotationType&quot;</span>:<br>        <span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>.type;<br><br>    <span class="hljs-keyword">default</span>:<br>        <span class="hljs-type">Object</span> <span class="hljs-variable">result</span> <span class="hljs-operator">=</span><br>            <span class="hljs-built_in">this</span>.memberValues.get(methodName);<br>&#125;<br></code></pre></td></tr></table></figure></div>
+
+<h3 id="6-1-为什么-entrySet-可以进入-default？"><a href="#6-1-为什么-entrySet-可以进入-default？" class="headerlink" title="6.1 为什么 entrySet() 可以进入 default？"></a>6.1 为什么 entrySet() 可以进入 default？</h3><p>当代理对象调用：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs java">proxyMap.entrySet();<br></code></pre></td></tr></table></figure></div>
+
+<p>得到：</p>
+<div class="code-container" data-rel="Text"><figure class="iseeu highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs text">methodName = &quot;entrySet&quot;<br>parameterTypes.length = 0<br></code></pre></td></tr></table></figure></div>
+
+<p>因此：</p>
+<ol>
+<li><p>不进入 equals 分支。</p>
+</li>
+<li><p>不触发参数数量异常。</p>
+</li>
+<li><p>不匹配 toString、hashCode、annotationType。</p>
+</li>
+<li><p>最终进入 default。</p>
+</li>
+</ol>
+<p>执行：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-built_in">this</span>.memberValues.get(<span class="hljs-string">&quot;entrySet&quot;</span>);<br></code></pre></td></tr></table></figure></div>
+
+<h3 id="6-2-为什么-get-“name”-不可以？"><a href="#6-2-为什么-get-“name”-不可以？" class="headerlink" title="6.2 为什么 get(“name”) 不可以？"></a>6.2 为什么 get(“name”) 不可以？</h3><p>如果代理对象调用：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs java">proxyMap.get(<span class="hljs-string">&quot;name&quot;</span>);<br></code></pre></td></tr></table></figure></div>
+
+<p>得到：</p>
+<div class="code-container" data-rel="Text"><figure class="iseeu highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs text">methodName = &quot;get&quot;<br>parameterTypes.length = 1<br></code></pre></td></tr></table></figure></div>
+
+<p>由于 <code>get(Object key)</code> 有一个形参，且不属于特殊处理的 <code>equals(Object)</code>，因此触发：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">AssertionError</span>(<br>    <span class="hljs-string">&quot;Too many parameters for an annotation method&quot;</span><br>);<br></code></pre></td></tr></table></figure></div>
+
+<p>不会进入 default 分支。</p>
+<p>注意：<code>getParameterTypes().length</code> 表示方法形参数量，不是方法名的字符数。</p>
+<hr>
+<h2 id="七、AnnotationInvocationHandler-readObject"><a href="#七、AnnotationInvocationHandler-readObject" class="headerlink" title="七、AnnotationInvocationHandler.readObject()"></a>七、AnnotationInvocationHandler.readObject()</h2><p>经典 JDK 8u65 中的相关源码：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">private</span> <span class="hljs-type">void</span> <span class="hljs-title function_">readObject</span><span class="hljs-params">(ObjectInputStream stream)</span><br>        <span class="hljs-keyword">throws</span> IOException, ClassNotFoundException &#123;<br><br>    stream.defaultReadObject();<br><br>    <span class="hljs-type">AnnotationType</span> <span class="hljs-variable">annotationType</span> <span class="hljs-operator">=</span><br>        AnnotationType.getInstance(<span class="hljs-built_in">this</span>.type);<br><br>    <span class="hljs-type">Map</span> <span class="hljs-variable">memberTypes</span> <span class="hljs-operator">=</span> annotationType.memberTypes();<br><br>    <span class="hljs-keyword">for</span> (Map.Entry entry : <span class="hljs-built_in">this</span>.memberValues.entrySet()) &#123;<br>        <span class="hljs-comment">// 注解成员类型检查</span><br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure></div>
+
+<h3 id="7-1-defaultReadObject"><a href="#7-1-defaultReadObject" class="headerlink" title="7.1 defaultReadObject()"></a>7.1 defaultReadObject()</h3><div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs java">stream.defaultReadObject();<br></code></pre></td></tr></table></figure></div>
+
+<p>恢复当前对象能够通过默认序列化机制处理的字段。</p>
+<p>重点包括：</p>
+<div class="code-container" data-rel="Text"><figure class="iseeu highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs text">this.type<br>this.memberValues<br></code></pre></td></tr></table></figure></div>
+
+<h3 id="7-2-AnnotationType-getInstance"><a href="#7-2-AnnotationType-getInstance" class="headerlink" title="7.2 AnnotationType.getInstance()"></a>7.2 AnnotationType.getInstance()</h3><div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs java">AnnotationType.getInstance(<span class="hljs-built_in">this</span>.type);<br></code></pre></td></tr></table></figure></div>
+
+<p>获取注解类型的元信息。</p>
+<p>例如注解有哪些成员，以及成员应该是什么类型。</p>
+<h3 id="7-3-memberTypes"><a href="#7-3-memberTypes" class="headerlink" title="7.3 memberTypes()"></a>7.3 memberTypes()</h3><div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">Map</span> <span class="hljs-variable">memberTypes</span> <span class="hljs-operator">=</span> annotationType.memberTypes();<br></code></pre></td></tr></table></figure></div>
+
+<p>获取注解成员名称与对应类型之间的映射。</p>
+<h3 id="7-4-memberValues-entrySet"><a href="#7-4-memberValues-entrySet" class="headerlink" title="7.4 memberValues.entrySet()"></a>7.4 memberValues.entrySet()</h3><div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">for</span> (Map.Entry entry : <span class="hljs-built_in">this</span>.memberValues.entrySet()) &#123;<br></code></pre></td></tr></table></figure></div>
+
+<p>这一行是经典 CC1 的重要调用位置。</p>
+<p>如果 <code>memberValues</code> 是普通 Map，那么只是普通集合遍历。</p>
+<p>如果 <code>memberValues</code> 是动态代理 Map，那么调用 <code>entrySet()</code> 会进入代理对象绑定的 <code>InvocationHandler.invoke()</code>。</p>
+<hr>
+<h2 id="八、经典-CC1-LazyMap-版本的对象关系"><a href="#八、经典-CC1-LazyMap-版本的对象关系" class="headerlink" title="八、经典 CC1 LazyMap 版本的对象关系"></a>八、经典 CC1 LazyMap 版本的对象关系</h2><p>经典 ysoserial CC1 使用两个不同的 <code>AnnotationInvocationHandler</code> 实例。</p>
+<div class="code-container" data-rel="Text"><figure class="iseeu highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs text">Handler A<br>    │<br>    └── memberValues → proxyMap<br>                           │<br>                           └── InvocationHandler → Handler B<br>                                                      │<br>                                                      └── memberValues → LazyMap<br>                                                                            │<br>                                                                            └── factory → ChainedTransformer<br></code></pre></td></tr></table></figure></div>
+
+<h3 id="Handler-A"><a href="#Handler-A" class="headerlink" title="Handler A"></a>Handler A</h3><p>作用：作为反序列化处理过程中的外层对象。</p>
+<p>其 <code>memberValues</code> 指向代理 Map。</p>
+<h3 id="Handler-B"><a href="#Handler-B" class="headerlink" title="Handler B"></a>Handler B</h3><p>作用：作为代理 Map 的 InvocationHandler。</p>
+<p>其 <code>memberValues</code> 指向 LazyMap。</p>
+<p><strong>两个 Handler 属于相同的类，但不是同一个对象。</strong></p>
+<p>当执行 Handler A 的实例方法时：</p>
+<div class="code-container" data-rel="Text"><figure class="iseeu highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">this.memberValues<br></code></pre></td></tr></table></figure></div>
+
+<p>指向代理 Map。</p>
+<p>当执行 Handler B 的实例方法时：</p>
+<div class="code-container" data-rel="Text"><figure class="iseeu highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">this.memberValues<br></code></pre></td></tr></table></figure></div>
+
+<p>指向 LazyMap。</p>
+<p>这体现了 Java 中 <code>this</code> 与实例字段的关系。</p>
+<hr>
+<h2 id="九、经典-CC1-LazyMap-调用链"><a href="#九、经典-CC1-LazyMap-调用链" class="headerlink" title="九、经典 CC1 LazyMap 调用链"></a>九、经典 CC1 LazyMap 调用链</h2><p>完整关键路径：</p>
+<div class="code-container" data-rel="Text"><figure class="iseeu highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><code class="hljs text">ObjectInputStream.readObject()<br>           │<br>           ▼<br>AnnotationInvocationHandler.readObject()<br>           │<br>           ▼<br>this.memberValues.entrySet()<br>           │<br>           ▼<br>Proxy Map.entrySet()<br>           │<br>           ▼<br>Handler B.invoke()<br>           │<br>           ▼<br>method.getName()<br>           │<br>           └── &quot;entrySet&quot;<br>                    │<br>                    ▼<br>this.memberValues.get(&quot;entrySet&quot;)<br>           │<br>           ▼<br>LazyMap.get(&quot;entrySet&quot;)<br>           │<br>           ▼<br>map.containsKey(&quot;entrySet&quot;)<br>           │<br>           └── false<br>                    │<br>                    ▼<br>factory.transform(&quot;entrySet&quot;)<br>           │<br>           ▼<br>ChainedTransformer.transform()<br>           │<br>           ▼<br>各个 Transformer 依次执行<br></code></pre></td></tr></table></figure></div>
+
+<h3 id="关键原理"><a href="#关键原理" class="headerlink" title="关键原理"></a>关键原理</h3><p>反序列化期间执行了一个看似正常的 <code>entrySet()</code>。</p>
+<p>但由于实际对象是动态代理 Map，这次方法调用被转交给 Handler B。</p>
+<p>Handler B 根据方法名称访问 LazyMap。</p>
+<p>LazyMap 在键不存在时触发 Transformer。</p>
+<p><strong>整个过程中，程序入口并没有直接调用 Transformer，而是通过对象之间的方法调用间接触发。</strong></p>
+<hr>
+<h2 id="十、LazyMap-的自定义反序列化"><a href="#十、LazyMap-的自定义反序列化" class="headerlink" title="十、LazyMap 的自定义反序列化"></a>十、LazyMap 的自定义反序列化</h2><p>调试时还遇到了：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">private</span> <span class="hljs-type">void</span> <span class="hljs-title function_">readObject</span><span class="hljs-params">(ObjectInputStream in)</span><br>        <span class="hljs-keyword">throws</span> IOException, ClassNotFoundException &#123;<br><br>    in.defaultReadObject();<br><br>    map = (Map) in.readObject();<br>&#125;<br></code></pre></td></tr></table></figure></div>
+
+<p>这是 LazyMap 自己的反序列化恢复逻辑。</p>
+<p>原因是其父类 <code>AbstractMapDecorator</code> 中存在：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">transient</span> Map map;<br></code></pre></td></tr></table></figure></div>
+
+<p><code>transient</code> 字段不会通过默认字段序列化自动保存。</p>
+<p>因此，相关自定义序列化逻辑需要负责保存及恢复底层 Map。</p>
+<p>这里要区分：</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>LazyMap.readObject()</td>
+<td>恢复 LazyMap 内部状态</td>
+</tr>
+<tr>
+<td>LazyMap.get()</td>
+<td>访问键，必要时执行 Transformer</td>
+</tr>
+</tbody></table>
+<p><strong>进入 LazyMap.readObject() 并不代表 Transformer 已经触发。</strong></p>
+<hr>
+<h2 id="十一、IDEA-Debug-技巧"><a href="#十一、IDEA-Debug-技巧" class="headerlink" title="十一、IDEA Debug 技巧"></a>十一、IDEA Debug 技巧</h2><h3 id="11-1-三种-Step"><a href="#11-1-三种-Step" class="headerlink" title="11.1 三种 Step"></a>11.1 三种 Step</h3><table>
+<thead>
+<tr>
+<th>快捷键</th>
+<th>功能</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>F7</td>
+<td>Step Into</td>
+<td>进入方法内部</td>
+</tr>
+<tr>
+<td>F8</td>
+<td>Step Over</td>
+<td>执行当前行，不进入内部调用</td>
+</tr>
+<tr>
+<td>Shift + F8</td>
+<td>Step Out</td>
+<td>执行完当前方法并返回调用者</td>
+</tr>
+<tr>
+<td>F9</td>
+<td>Resume Program</td>
+<td>继续执行到下一个断点</td>
+</tr>
+</tbody></table>
+<h3 id="11-2-观察调用栈"><a href="#11-2-观察调用栈" class="headerlink" title="11.2 观察调用栈"></a>11.2 观察调用栈</h3><p>Debug 窗口的 Frames 用于查看当前方法由谁调用。</p>
+<p>分析反序列化时，应重点判断：</p>
+<ul>
+<li><p>当前位于哪个对象的 <code>readObject()</code>。</p>
+</li>
+<li><p>是否经过动态代理类。</p>
+</li>
+<li><p>当前 Handler 是哪一个实例。</p>
+</li>
+<li><p>方法调用是否进入了 LazyMap。</p>
+</li>
+<li><p>是否真正执行 <code>ChainedTransformer.transform()</code>。</p>
+</li>
+</ul>
+<h3 id="11-3-反编译变量名"><a href="#11-3-反编译变量名" class="headerlink" title="11.3 反编译变量名"></a>11.3 反编译变量名</h3><p>IDEA 打开 JDK 的 <code>.class</code> 文件时，可能显示：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs java">Decompiled .<span class="hljs-keyword">class</span> <span class="hljs-title class_">file</span><br></code></pre></td></tr></table></figure></div>
+
+<p>局部变量名可能变成 <code>var1</code>、<code>var2</code> 等。</p>
+<p>可以尝试为 JDK 配置对应版本的 <code>src.zip</code> 源码包，以改善阅读体验。</p>
+<h3 id="11-4-调试时的常见误区"><a href="#11-4-调试时的常见误区" class="headerlink" title="11.4 调试时的常见误区"></a>11.4 调试时的常见误区</h3><p><strong>误区一：反序列化成功等于漏洞触发成功。</strong></p>
+<p>错误。正常执行完 <code>readObject()</code> 不代表 Transformer 被触发。</p>
+<p><strong>误区二：进入 AnnotationInvocationHandler.invoke() 就是 CC1 成功。</strong></p>
+<p>错误。JDK 正常处理注解时也会使用这个方法。</p>
+<p>需要检查 <code>method.getName()</code> 和调用栈。</p>
+<p><strong>误区三：原始 Map 没有变化就说明利用链没有执行。</strong></p>
+<p>不一定。反序列化恢复的是新对象图，通常不会直接修改序列化前的原始 Map。</p>
+<p><strong>误区四：不断按 F7 就一定能看到完整链条。</strong></p>
+<p>不一定。反序列化存在大量内部调用，更适合使用关键位置断点和 Frames 分析。</p>
+<hr>
+<h2 id="十二、目前的实验结果与结论"><a href="#十二、目前的实验结果与结论" class="headerlink" title="十二、目前的实验结果与结论"></a>十二、目前的实验结果与结论</h2><p>已完成：</p>
+<ul>
+<li><p>Commons Collections Maven 环境搭建。</p>
+</li>
+<li><p>Transformer 基础实验。</p>
+</li>
+<li><p>InvokerTransformer 反射源码分析。</p>
+</li>
+<li><p>ChainedTransformer 调用过程 Debug。</p>
+</li>
+<li><p>LazyMap.get() 的触发条件分析。</p>
+</li>
+<li><p>Java 动态代理原理学习。</p>
+</li>
+<li><p>AnnotationInvocationHandler.readObject() 源码阅读。</p>
+</li>
+<li><p>AnnotationInvocationHandler.invoke() 源码阅读。</p>
+</li>
+<li><p>JDK 8u65 环境配置。</p>
+</li>
+</ul>
+<p>尚未完成：</p>
+<ul>
+<li><p>在真实 CC1 对象图反序列化过程中，明确捕获到 <code>ChainedTransformer.transform()</code> 的调用栈。</p>
+</li>
+<li><p>独立编写完整无害 PoC。</p>
+</li>
+<li><p>TransformedMap 版本的源码分析和实验。</p>
+</li>
+</ul>
+<p>因此，目前应该将学习状态定义为：</p>
+<p><strong>已理解经典 CC1 LazyMap 版本的主要调用原理，但尚未完成完整链条的动态验证。</strong></p>
+<hr>
+<h2 id="十三、下一步：TransformedMap-版本-CC1"><a href="#十三、下一步：TransformedMap-版本-CC1" class="headerlink" title="十三、下一步：TransformedMap 版本 CC1"></a>十三、下一步：TransformedMap 版本 CC1</h2><p>参考文章：</p>
+<p><a class="link"   target="_blank" rel="noopener" href="https://drun1baby.top/2022/06/06/Java%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96Commons-Collections%E7%AF%8701-CC1%E9%93%BE/" >Java 反序列化 Commons-Collections 篇01—CC1 链<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
+<p>下一阶段采用逆向追踪方式：</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java">InvokerTransformer.transform()<br>           ↑<br>ChainedTransformer.transform()<br>           ↑<br>TransformedMap.checkSetValue()<br>           ↑<br>Map.Entry.setValue()<br>           ↑<br>AnnotationInvocationHandler.readObject()<br></code></pre></td></tr></table></figure></div>
+
+<p>主要研究：</p>
+<ol>
+<li><p><code>TransformedMap</code> 与 <code>LazyMap</code> 的区别。</p>
+</li>
+<li><p><code>checkSetValue()</code> 为什么会调用 Transformer。</p>
+</li>
+<li><p><code>Map.Entry.setValue()</code> 如何触发值转换。</p>
+</li>
+<li><p><code>AnnotationInvocationHandler.readObject()</code> 中哪些条件会导致 <code>setValue()</code> 被执行。</p>
+</li>
+<li><p>如何从源码独立构建对象关系，并使用无害操作验证反序列化调用路径。</p>
+</li>
+<li><p>通过 Debug 验证调用栈，解释每个方法被调用的原因。</p>
+</li>
+</ol>
+<p><strong>最终目标：能够不依赖现成 EXP，独立分析触发路径，并编写可验证原理的本地无害 PoC。</strong></p>
+<hr>
+<p><strong>本系列笔记：</strong> <a href="/2026/11/01/java-security-urldns/">Java安全学习</a> · <a href="/2026/11/01/cc1-study-notes/">Java 反序列化漏洞：CommonsCollections1（CC1）学习笔记</a> · <a href="/2026/11/01/cc1-transformedmap/">cc1链学习</a> · <a href="/2026/11/01/cc1-lazymap/">正版cc1链学习</a> · <a href="/2026/11/01/cc3-classloading/">cc3链学习</a> · <a href="/2026/11/01/cc6-study/">cc6链学习</a></p>
+
+		</div>
+
+		
+
+		
+		<ul class="post-tags-box text-lg mt-1.5 flex-wrap justify-center flex md:hidden">
+			
+			<li class="tag-item mx-0.5">
+				<a href="/tags/Java/">#Java</a>&nbsp;
+			</li>
+			
+			<li class="tag-item mx-0.5">
+				<a href="/tags/%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/">#反序列化</a>&nbsp;
+			</li>
+			
+			<li class="tag-item mx-0.5">
+				<a href="/tags/CC1/">#CC1</a>&nbsp;
+			</li>
+			
+		</ul>
+		
+
+		
+
+		
+		<div class="article-nav my-8 flex justify-between items-center px-2 sm:px-6 md:px-8">
+			
+			<div class="article-prev border-border-color shadow-redefine-flat shadow-shadow-color-2 rounded-medium px-4 py-2 hover:shadow-redefine-flat-hover hover:shadow-shadow-color-2">
+				<a class="prev" rel="prev" href="/2026/11/01/java-security-urldns/">
+					<span class="left arrow-icon flex justify-center items-center">
+						<i class="fa-solid fa-chevron-left"></i>
+					</span>
+					<span class="title flex justify-center items-center">
+						<span class="post-nav-title-item truncate max-w-48">Java 安全学习</span>
+						<span class="post-nav-item">上一篇</span>
+					</span>
+				</a>
+			</div>
+			
+			
+			<div class="article-next border-border-color shadow-redefine-flat shadow-shadow-color-2 rounded-medium px-4 py-2 hover:shadow-redefine-flat-hover hover:shadow-shadow-color-2">
+				<a class="next" rel="next" href="/2026/11/01/cc1-transformedmap/">
+					<span class="title flex justify-center items-center">
+						<span class="post-nav-title-item truncate max-w-48">cc1链学习</span>
+						<span class="post-nav-item">下一篇</span>
+					</span>
+					<span class="right arrow-icon flex justify-center items-center">
+						<i class="fa-solid fa-chevron-right"></i>
+					</span>
+				</a>
+			</div>
+			
+		</div>
+		
+
+
+		
+	</div>
+
+	
+	<div class="toc-content-container">
+		<div class="post-toc-wrap">
+	<div class="post-toc">
+		<div class="toc-title">目录</div>
+		<div class="page-title">Java 反序列化漏洞：CommonsCollections1（CC1）学习笔记</div>
+		<ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81Commons-Collections-%E7%AE%80%E4%BB%8B"><span class="nav-text">一、Commons Collections 简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81Transformer-%E6%8E%A5%E5%8F%A3"><span class="nav-text">二、Transformer 接口</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E6%8E%A5%E5%8F%A3%E5%AE%9A%E4%B9%89"><span class="nav-text">2.1 接口定义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-ConstantTransformer"><span class="nav-text">2.2 ConstantTransformer</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-InvokerTransformer"><span class="nav-text">2.3 InvokerTransformer</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-4-ChainedTransformer"><span class="nav-text">2.4 ChainedTransformer</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81LazyMap-%E7%9A%84%E8%A7%A6%E5%8F%91%E6%9C%BA%E5%88%B6"><span class="nav-text">三、LazyMap 的触发机制</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-LazyMap-%E7%9A%84%E4%BD%9C%E7%94%A8"><span class="nav-text">3.1 LazyMap 的作用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-LazyMap-get-%E6%BA%90%E7%A0%81"><span class="nav-text">3.2 LazyMap.get() 源码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-factory-%E4%B8%8E-transformer-%E7%9A%84%E5%85%B3%E7%B3%BB"><span class="nav-text">3.3 factory 与 transformer 的关系</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81Java-%E5%8A%A8%E6%80%81%E4%BB%A3%E7%90%86"><span class="nav-text">四、Java 动态代理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-Proxy-%E4%B8%8E-InvocationHandler"><span class="nav-text">4.1 Proxy 与 InvocationHandler</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-invoke-%E7%9A%84%E5%8F%82%E6%95%B0"><span class="nav-text">4.2 invoke() 的参数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-%E4%B8%A4%E7%A7%8D-invoke-%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-text">4.3 两种 invoke() 的区别</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-4-%E4%BB%A3%E7%90%86%E8%BF%94%E5%9B%9E%E5%80%BC%E7%B1%BB%E5%9E%8B"><span class="nav-text">4.4 代理返回值类型</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81AnnotationInvocationHandler"><span class="nav-text">五、AnnotationInvocationHandler</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E7%B1%BB%E7%9A%84%E4%BD%9C%E7%94%A8"><span class="nav-text">5.1 类的作用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-%E6%9E%84%E9%80%A0%E6%96%B9%E6%B3%95"><span class="nav-text">5.2 构造方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-%E9%80%9A%E8%BF%87%E5%8F%8D%E5%B0%84%E8%8E%B7%E5%8F%96%E6%9E%84%E9%80%A0%E6%96%B9%E6%B3%95"><span class="nav-text">5.3 通过反射获取构造方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-4-Constructor-newInstance"><span class="nav-text">5.4 Constructor.newInstance()</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AD%E3%80%81AnnotationInvocationHandler-invoke-%E6%BA%90%E7%A0%81"><span class="nav-text">六、AnnotationInvocationHandler.invoke() 源码</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#6-1-%E4%B8%BA%E4%BB%80%E4%B9%88-entrySet-%E5%8F%AF%E4%BB%A5%E8%BF%9B%E5%85%A5-default%EF%BC%9F"><span class="nav-text">6.1 为什么 entrySet() 可以进入 default？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-2-%E4%B8%BA%E4%BB%80%E4%B9%88-get-%E2%80%9Cname%E2%80%9D-%E4%B8%8D%E5%8F%AF%E4%BB%A5%EF%BC%9F"><span class="nav-text">6.2 为什么 get(“name”) 不可以？</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%83%E3%80%81AnnotationInvocationHandler-readObject"><span class="nav-text">七、AnnotationInvocationHandler.readObject()</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#7-1-defaultReadObject"><span class="nav-text">7.1 defaultReadObject()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-2-AnnotationType-getInstance"><span class="nav-text">7.2 AnnotationType.getInstance()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-3-memberTypes"><span class="nav-text">7.3 memberTypes()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-4-memberValues-entrySet"><span class="nav-text">7.4 memberValues.entrySet()</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AB%E3%80%81%E7%BB%8F%E5%85%B8-CC1-LazyMap-%E7%89%88%E6%9C%AC%E7%9A%84%E5%AF%B9%E8%B1%A1%E5%85%B3%E7%B3%BB"><span class="nav-text">八、经典 CC1 LazyMap 版本的对象关系</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Handler-A"><span class="nav-text">Handler A</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Handler-B"><span class="nav-text">Handler B</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B9%9D%E3%80%81%E7%BB%8F%E5%85%B8-CC1-LazyMap-%E8%B0%83%E7%94%A8%E9%93%BE"><span class="nav-text">九、经典 CC1 LazyMap 调用链</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E5%8E%9F%E7%90%86"><span class="nav-text">关键原理</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8D%81%E3%80%81LazyMap-%E7%9A%84%E8%87%AA%E5%AE%9A%E4%B9%89%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96"><span class="nav-text">十、LazyMap 的自定义反序列化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8D%81%E4%B8%80%E3%80%81IDEA-Debug-%E6%8A%80%E5%B7%A7"><span class="nav-text">十一、IDEA Debug 技巧</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#11-1-%E4%B8%89%E7%A7%8D-Step"><span class="nav-text">11.1 三种 Step</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#11-2-%E8%A7%82%E5%AF%9F%E8%B0%83%E7%94%A8%E6%A0%88"><span class="nav-text">11.2 观察调用栈</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#11-3-%E5%8F%8D%E7%BC%96%E8%AF%91%E5%8F%98%E9%87%8F%E5%90%8D"><span class="nav-text">11.3 反编译变量名</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#11-4-%E8%B0%83%E8%AF%95%E6%97%B6%E7%9A%84%E5%B8%B8%E8%A7%81%E8%AF%AF%E5%8C%BA"><span class="nav-text">11.4 调试时的常见误区</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8D%81%E4%BA%8C%E3%80%81%E7%9B%AE%E5%89%8D%E7%9A%84%E5%AE%9E%E9%AA%8C%E7%BB%93%E6%9E%9C%E4%B8%8E%E7%BB%93%E8%AE%BA"><span class="nav-text">十二、目前的实验结果与结论</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8D%81%E4%B8%89%E3%80%81%E4%B8%8B%E4%B8%80%E6%AD%A5%EF%BC%9ATransformedMap-%E7%89%88%E6%9C%AC-CC1"><span class="nav-text">十三、下一步：TransformedMap 版本 CC1</span></a></li></ol>
+
+	</div>
+</div>
+	</div>
+	
+</div>
+
+			</div>
+
+			
+		</div>
+
+		<div class="main-content-footer">
+			<footer class="footer mt-5 py-5 h-auto text-base text-third-text-color relative border-t-2 border-t-border-color">
+    <div class="info-container py-3 text-center">
+        
+            <div class="customize-info my-1">记录探索，保持好奇。</div>
+        
+        <div class="text-center">
+            &copy;
+            
+              <span>2025</span>
+              -
+            
+            2026&nbsp;&nbsp;<i class="fa-solid fa-mountain-sun"></i>&nbsp;&nbsp;<a href="/">xiaolu-cmd</a>
+            
+        </div>
+        
+        <div class="relative text-center lg:absolute lg:left-[20px] lg:top-1/2 lg:-translate-y-1/2 lg:text-left">
+            <span class="lg:block text-sm">由 <?xml version="1.0" encoding="utf-8"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg class="relative top-[2px] inline-block align-baseline" version="1.1" id="圖層_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="1rem" height="1rem" viewBox="0 0 512 512" enable-background="new 0 0 512 512" xml:space="preserve"><path fill="#0E83CD" d="M256.4,25.8l-200,115.5L56,371.5l199.6,114.7l200-115.5l0.4-230.2L256.4,25.8z M349,354.6l-18.4,10.7l-18.6-11V275H200v79.6l-18.4,10.7l-18.6-11v-197l18.5-10.6l18.5,10.8V237h112v-79.6l18.5-10.6l18.5,10.8V354.6z"/></svg><a target="_blank" class="text-base" href="https://hexo.io">Hexo</a> 驱动</span>
+            <span class="text-sm lg:block">主题&nbsp;<a class="text-base" target="_blank" href="https://github.com/EvanNotFound/hexo-theme-redefine">Redefine v2.9.0</a></span>
+        </div>
+        
+        
+        
+        
+            
+                
+        
+                
+        
+        
+    </div>  
+</footer>
+		</div>
+	</div>
+
+	
+	<div class="post-tools">
+		<div class="post-tools-container">
+	<ul class="article-tools-list">
+		<!-- TOC aside toggle -->
+		
+		<li class="right-bottom-tools page-aside-toggle">
+			<i class="fa-regular fa-outdent"></i>
+		</li>
+		
+
+		<!-- go comment -->
+		
+	</ul>
+</div>
+	</div>
+	
+
+	<div class="right-side-tools-container">
+		<div class="side-tools-container">
+	<ul class="hidden-tools-list">
+		<li class="right-bottom-tools tool-font-adjust-plus flex justify-center items-center">
+			<i class="fa-regular fa-magnifying-glass-plus"></i>
+		</li>
+
+		<li class="right-bottom-tools tool-font-adjust-minus flex justify-center items-center">
+			<i class="fa-regular fa-magnifying-glass-minus"></i>
+		</li>
+
+		<li class="right-bottom-tools tool-dark-light-toggle flex justify-center items-center">
+			<i class="fa-regular fa-moon"></i>
+		</li>
+
+		<!-- rss -->
+		
+
+		
+
+		<li class="right-bottom-tools tool-scroll-to-bottom flex justify-center items-center">
+			<i class="fa-regular fa-arrow-down"></i>
+		</li>
+	</ul>
+
+	<ul class="visible-tools-list">
+		<li class="right-bottom-tools toggle-tools-list flex justify-center items-center">
+			<i class="fa-regular fa-cog fa-spin"></i>
+		</li>
+		
+		<li class="right-bottom-tools tool-scroll-to-top flex justify-center items-center">
+			<i class="arrow-up fas fa-arrow-up"></i>
+			<span class="percent"></span>
+		</li>
+		
+		
+	</ul>
+</div>
+	</div>
+
+	<div class="image-viewer-container" role="dialog" aria-modal="true" aria-label="图片查看器">
+	<button class="image-viewer-close" type="button" aria-label="关闭">
+		<i class="fa-solid fa-xmark"></i>
+	</button>
+	<button class="image-viewer-prev" type="button" aria-label="上一页">
+		<i class="fa-solid fa-chevron-left"></i>
+	</button>
+	<div class="image-viewer-frame">
+		<img src="" alt="">
+	</div>
+	<div class="image-viewer-exif-panel hidden absolute left-1/2 bottom-20 -translate-x-1/2 w-[min(92vw,420px)] max-h-[60vh] overflow-hidden rounded-2xl bg-background-color-transparent-80 p-4 text-left shadow-redefine-flat backdrop-blur-md" role="dialog" aria-label="EXIF" aria-hidden="true">
+		<div class="flex items-center justify-between mb-3">
+			<span class="text-sm font-semibold text-first-text-color">EXIF</span>
+			<button class="image-viewer-exif-close flex h-8 w-8 items-center justify-center rounded-full bg-background-color-transparent-80 text-first-text-color transition hover:bg-background-color-transparent-40" type="button" aria-label="关闭">
+				<i class="fa-solid fa-xmark text-[0.65rem]"></i>
+			</button>
+		</div>
+		<div class="image-viewer-exif-cards grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[50vh] overflow-y-auto pr-1 scrollbar-hide"></div>
+		<template class="image-viewer-exif-card-template">
+			<div class="rounded-lg bg-background-color-transparent-40 px-3 py-2">
+				<div class="image-viewer-exif-card-header flex items-center gap-2 mb-1">
+					<i class="image-viewer-exif-card-icon fa-solid fa-circle-info text-xs text-third-text-color"></i>
+					<div class="image-viewer-exif-card-title text-xs font-semibold text-first-text-color"></div>
+				</div>
+				<div class="image-viewer-exif-card-items flex flex-col gap-1"></div>
+			</div>
+		</template>
+	</div>
+	<button class="image-viewer-exif-toggle flex items-center gap-2 hidden absolute left-1/2 bottom-6 -translate-x-1/2 rounded-full border border-border-color bg-background-color-transparent-80 px-4 py-2 text-first-text-color backdrop-blur-md transition hover:bg-background-color-transparent-40" type="button" aria-label="EXIF" aria-expanded="false">
+		<i class="fa-solid fa-circle-info text-xs"></i>
+		<span class="text-xs font-semibold uppercase tracking-wider">EXIF</span>
+	</button>
+	<button class="image-viewer-next" type="button" aria-label="下一页">
+		<i class="fa-solid fa-chevron-right"></i>
+	</button>
+</div>
+
+
+	
+	<div class="search-pop-overlay">
+	<div class="popup search-popup">
+		<div class="search-header">
+			<span class="search-input-field-pre">
+				<i class="fa-solid fa-keyboard"></i>
+			</span>
+			<div class="search-input-container">
+				<input autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="站内搜索您需要的内容..." spellcheck="false" type="search" class="search-input">
+			</div>
+			<span class="popup-btn-close">
+				<i class="fa-solid fa-times"></i>
+			</span>
+		</div>
+		<div id="search-result">
+			<div id="no-result">
+				<i class="fa-solid fa-spinner fa-spin-pulse fa-5x fa-fw"></i>
+			</div>
+		</div>
+	</div>
+</div>
+	
+
+</main>
+
+
+
+	
+<script src="/js/build/main.js" type="module"></script>
+
+
+
+
+
+
+
+
+  
+<script src="/js/build/libs/Typed.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+<script src="/js/build/libs/moment-with-locales.min.js" data-swup-reload-script=""></script>
+
+
+
+	
+</body>
+
+</html>

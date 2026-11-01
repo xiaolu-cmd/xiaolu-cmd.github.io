@@ -20,6 +20,9 @@ html { scroll-padding-top: 100px; }
 .home-article-content { line-height: 1.85; }
 .home-content-container { padding-top: 12px; }
 .article-content { overflow-wrap: anywhere; }
+.article-title-regular, .article-title-cover { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+.toc-title { overflow-wrap: anywhere; }
+@media (max-width: 640px) { .article-title .article-title-regular { font-size: 1.75rem !important; line-height: 1.35; } }
 a:focus-visible,button:focus-visible { outline: 2px solid #6aa9bc; outline-offset: 5px; }
 @media (min-width: 1200px) { .home-content-container { max-width: 880px; margin-inline: auto; } }
 @media (max-width: 640px) { .home-banner-container { height: 76svh !important; min-height: 76svh !important; } .home-banner-container .content { min-height: 66svh !important; } .home-banner-container .content .description { font-size: 1.75rem !important; line-height: 1.45; padding-inline: 16px; letter-spacing: .01em; } .home-banner-container .content .description p { letter-spacing: .04em; } .home-banner-container .content .description p i { font-size: .95rem !important; } .home-article-thumbnail { height: 170px !important; } }
