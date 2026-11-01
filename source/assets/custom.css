@@ -1,0 +1,23 @@
+/* Personal touches layered over the unmodified Redefine theme. */
+html { scroll-padding-top: 100px; }
+.home-banner-container { height: 82svh !important; min-height: 82svh !important; }
+.home-banner-container .content { min-height: 72svh !important; }
+.home-banner-background::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg,rgba(9,19,34,.2),rgba(9,19,34,.03) 45%,rgba(9,19,34,.28)); pointer-events:none; }
+.home-banner-container .home-banner-background { pointer-events: none; width: 100% !important; height: 100% !important; scale: 1 !important; transform: none !important; }
+.home-banner-container .content .description { letter-spacing: .035em; text-shadow: 0 3px 25px rgba(4,12,24,.28); padding: 0 24px; font-weight: 650; }
+.home-banner-container .content .description p { margin-top: 22px; letter-spacing: .16em; }
+.home-banner-container .social-contacts { color: white; }
+.home-banner-container .social-contacts a { color: white; }
+.navbar-container { background: rgba(20,38,58,.86) !important; }
+.navbar-container .navbar-content .left .logo-title, .navbar-container .navbar-content .left .logo-title h1, .navbar-container .navbar-content .right .desktop .navbar-list .navbar-item, .navbar-container .navbar-content .right .desktop .navbar-list .navbar-item a, .navbar-container .navbar-content .right .desktop .navbar-list .navbar-item i, .navbar-container .navbar-content .right .mobile .icon-item { color: #f3f7fb !important; }
+.navbar-container .navbar-content .right .desktop .navbar-list .navbar-item a.active::after { background: #a7d4e3; }
+.home-article-thumbnail { height: 220px !important; }
+.home-article-title { font-size: 1.55rem; }
+.home-article-item { margin-bottom: 28px; }
+.home-article-content { line-height: 1.85; }
+.home-content-container { padding-top: 12px; }
+.article-content { overflow-wrap: anywhere; }
+a:focus-visible,button:focus-visible { outline: 2px solid #6aa9bc; outline-offset: 5px; }
+@media (min-width: 1200px) { .home-content-container { max-width: 880px; margin-inline: auto; } }
+@media (max-width: 640px) { .home-banner-container { height: 76svh !important; min-height: 76svh !important; } .home-banner-container .content { min-height: 66svh !important; } .home-banner-container .content .description { font-size: 1.75rem; line-height: 1.45; padding-inline: 16px; letter-spacing: .01em; } .home-banner-container .content .description p { letter-spacing: .04em; } .home-banner-container .content .description p i { font-size: .95rem; } .home-article-thumbnail { height: 170px !important; } }
+@media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }

@@ -1,0 +1,105 @@
+info:
+  title: "xiaolu-cmd's Blog"
+  subtitle: 记录探索，保持好奇。
+  author: xiaolu-cmd
+  url: https://xiaolu-cmd.github.io
+defaults:
+  favicon: /assets/favicon.png
+  logo:
+  avatar: /assets/avatar.svg
+colors:
+  primary: '#447f9e'
+  default_mode: light
+global:
+  content_max_width: 1080px
+  website_counter:
+    enable: false
+    site_pv: false
+    site_uv: false
+    post_pv: false
+  single_page: false
+  open_graph:
+    enable: true
+    image: /assets/hero.webp
+    description: 网络安全学习笔记，以及一些有趣的发现。
+home_banner:
+  enable: true
+  style: static
+  image:
+    light: /assets/hero.webp
+    dark: /assets/hero.webp
+  title: '保持好奇，持续探索。'
+  subtitle:
+    text: ['网络安全 · 学习笔记 · 有趣的发现']
+    loop: false
+    typing_speed: 70
+  text_color:
+    light: '#ffffff'
+    dark: '#ffffff'
+  text_style:
+    title_size: 3.6rem
+    subtitle_size: 1.15rem
+  social_links:
+    enable: true
+    style: default
+    links:
+      - icon: github
+        url: https://github.com/xiaolu-cmd
+      - url:
+      - url:
+      - url:
+      - url:
+    qrs: []
+navbar:
+  color:
+    left: '#24384c'
+    right: '#447f9e'
+    transparency: 60
+  links:
+    Home:
+      path: /
+      icon: fa-solid fa-house
+    Archives:
+      path: /archives/
+      icon: fa-solid fa-box-archive
+    About:
+      path: /about/
+      icon: fa-solid fa-user
+  search:
+    enable: true
+    preload: false
+home:
+  sidebar:
+    enable: false
+    show_on_mobile: true
+  article_date_format: YYYY-MM-DD
+  excerpt_length: 110
+articles:
+  style:
+    font_size: 17px
+    line_height: 1.85
+  word_count:
+    enable: false
+    count: false
+    min2read: false
+  author_label:
+    enable: false
+  copyright:
+    enable: false
+comment:
+  enable: false
+links: []
+footer:
+  runtime: false
+  start: 2025/07/16 16:20:45
+  statistics: false
+  icon: '<i class="fa-solid fa-mountain-sun"></i>'
+  customize: '记录探索，保持好奇。'
+inject:
+  enable: true
+  head:
+    - '<link rel="stylesheet" href="/assets/custom.css">'
+    - '<link rel="preload" as="image" href="/assets/hero.webp" fetchpriority="high">'
+  footer: []
+cdn:
+  enable: false
