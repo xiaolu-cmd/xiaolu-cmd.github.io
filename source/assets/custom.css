@@ -11,6 +11,8 @@ html { scroll-padding-top: 100px; }
 .navbar-container { background: rgba(20,38,58,.86) !important; }
 .navbar-container .navbar-content .left .logo-title, .navbar-container .navbar-content .left .logo-title h1, .navbar-container .navbar-content .right .desktop .navbar-list .navbar-item, .navbar-container .navbar-content .right .desktop .navbar-list .navbar-item a, .navbar-container .navbar-content .right .desktop .navbar-list .navbar-item i, .navbar-container .navbar-content .right .mobile .icon-item { color: #f3f7fb !important; }
 .navbar-container .navbar-content .right .desktop .navbar-list .navbar-item a.active::after { background: #a7d4e3; }
+.navbar-container .navbar-content .right .mobile i { color: #f3f7fb !important; }
+.navbar-container .navbar-content .right .mobile .navbar-bar .bar { background: #f3f7fb !important; }
 .home-article-thumbnail { height: 220px !important; }
 .home-article-title { font-size: 1.55rem; }
 .home-article-item { margin-bottom: 28px; }
@@ -19,5 +21,5 @@ html { scroll-padding-top: 100px; }
 .article-content { overflow-wrap: anywhere; }
 a:focus-visible,button:focus-visible { outline: 2px solid #6aa9bc; outline-offset: 5px; }
 @media (min-width: 1200px) { .home-content-container { max-width: 880px; margin-inline: auto; } }
-@media (max-width: 640px) { .home-banner-container { height: 76svh !important; min-height: 76svh !important; } .home-banner-container .content { min-height: 66svh !important; } .home-banner-container .content .description { font-size: 1.75rem; line-height: 1.45; padding-inline: 16px; letter-spacing: .01em; } .home-banner-container .content .description p { letter-spacing: .04em; } .home-banner-container .content .description p i { font-size: .95rem; } .home-article-thumbnail { height: 170px !important; } }
+@media (max-width: 640px) { .home-banner-container { height: 76svh !important; min-height: 76svh !important; } .home-banner-container .content { min-height: 66svh !important; } .home-banner-container .content .description { font-size: 1.75rem !important; line-height: 1.45; padding-inline: 16px; letter-spacing: .01em; } .home-banner-container .content .description p { letter-spacing: .04em; } .home-banner-container .content .description p i { font-size: .95rem !important; } .home-article-thumbnail { height: 170px !important; } }
 @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
