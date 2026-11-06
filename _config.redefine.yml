@@ -59,12 +59,21 @@ navbar:
     Home:
       path: /
       icon: fa-solid fa-house
+    锐评世界:
+      path: /world/
+      icon: fa-regular fa-comment
+    博主推荐:
+      path: /bloggers/
+      icon: fa-solid fa-compass
     Archives:
       path: /archives/
       icon: fa-solid fa-box-archive
     About:
       path: /about/
       icon: fa-solid fa-user
+    栏目编辑:
+      path: /editor/
+      icon: fa-solid fa-pen-to-square
   search:
     enable: true
     preload: false
@@ -99,6 +108,7 @@ inject:
   enable: true
   head:
     - '<link rel="stylesheet" href="/assets/custom.css">'
+    - '<link rel="stylesheet" href="/assets/columns/columns.css">'
     - '<link rel="preload" as="image" href="/assets/hero.webp" fetchpriority="high">'
   footer: []
 cdn:

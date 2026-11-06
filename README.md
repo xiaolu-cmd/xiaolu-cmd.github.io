@@ -24,6 +24,18 @@ npm run deploy
 部署需要你自己的 GitHub 写入权限。`source` 分支保存源码，`master` 分支保存生成的网页，并由 GitHub Pages 托管。
 修改源码后请先提交到 `source` 分支，再部署。不要在 `master` 上直接修改生成文件，否则下次构建会覆盖。
 
+## 栏目与在线编辑
+
+- `/world/`：锐评世界，支持观点正文、参考来源、标签和置顶。
+- `/bloggers/`：优秀博主资源推荐，支持推荐理由、主页网址、标签检索和置顶。
+- `/editor/`：两个栏目的统一在线编辑页面，可在手机或电脑使用。
+
+在编辑页填写内容后，点击“到 GitHub 确认发布”。登录 `xiaolu-cmd` 并提交预填好的 Issue，即会触发自动发布。较长的内容会提供“复制发布内容”步骤，避免浏览器网址过长。
+只有 Issue 作者和提交事件操作者均为 `xiaolu-cmd` 时，工作流才接受请求。发布记录和栏目内容均公开。下架只从网站展示中移除内容，GitHub 中的历史记录仍保留。
+本机草稿保存在当前浏览器，提交后的内容保存在 `source` 分支的 `content/columns.json`。自动发布使用 `.github/workflows/publish-site.yml` 从源码构建，GitHub Pages 的发布方式为 GitHub Actions。
+后续笔记或主题变更只要推送到 `source` 分支，即会自动部署。`master` 保留静态快照及默认分支工作流；日常内容以 `source` 为准。同步新内容前请先拉取远端 `source`，以包含在线编辑产生的提交。
+`scripts/columns-pages.js` 会把工作流复制到生成结果，使用手动静态发布工具时不会丢失在线编辑入口。
+
 ## 外观配置
 
 - `_config.redefine.yml`：主题设置、菜单、首页文案。
