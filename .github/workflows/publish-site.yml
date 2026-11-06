@@ -1,0 +1,62 @@
+name: Publish site and columns
+on:
+  push:
+    branches: [source]
+  issues:
+    types: [opened, edited, reopened]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: site-publish
+  cancel-in-progress: false
+jobs:
+  build:
+    if: >-
+      github.event_name != 'issues' ||
+      (github.event.sender.login == 'xiaolu-cmd' && github.event.issue.user.login == 'xiaolu-cmd' && contains(github.event.issue.body, '<!-- xiaolu-columns:v1 -->'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: source
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Check editor authorization and data handling
+        run: node editor-tools/check.cjs
+      - name: Apply authenticated editor request
+        if: github.event_name == 'issues'
+        run: node editor-tools/apply-issue.cjs
+      - name: Commit column revision
+        if: github.event_name == 'issues'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add content/columns.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'Update columns from owner editor request'
+            git push origin HEAD:source
+          fi
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: public
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy site
+        id: deployment
+        uses: actions/deploy-pages@v4
