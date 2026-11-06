@@ -361,7 +361,7 @@
 
         <div class="statistics flex justify-around my-2.5">
     <a class="item tag-count-item flex flex-col justify-center items-center w-20" href="/tags">
-        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">6</div>
+        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">7</div>
         <div class="label text-third-text-color text-sm">标签</div>
     </a>
     <a class="item tag-count-item flex flex-col justify-center items-center w-20" href="/categories">
@@ -369,7 +369,7 @@
         <div class="label text-third-text-color text-sm">分类</div>
     </a>
     <a class="item tag-count-item flex flex-col justify-center items-center w-20" href="/archives">
-        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">8</div>
+        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">9</div>
         <div class="label text-third-text-color text-sm">文章</div>
     </a>
 </div>
@@ -591,7 +591,7 @@
 <h2 id="调用链回顾与学习总结"><a href="#调用链回顾与学习总结" class="headerlink" title="调用链回顾与学习总结"></a>调用链回顾与学习总结</h2><p>这是用cc1补全形成的链条<br>cc3学习结束了，反序列化真难啊<br>还是要复习一下这条链新发现的额前半部分，首先是通过TemplatesImpl.java来加载恶意的class，我们发现他重写了defineclass，然后找到defineTransletClasses调用了它，getTransletInstance又调用了defineTransletClasses，然后在这个方法里面还进行了实例化，接着找newTransformer调用了这个方法，这个是公共的可以被调用了，这个基本加载恶意字节码的调用完成了，为了凑成完整的链条，接着往前找，找到了TrAXFilter.java，这个类的构造函数里直接调用了，由于cc3不使用invoketransformer，所以引进了一个新的来 InstantiateTransformer来实例化它从而触发，其他的前面的部分可以沿用cc1和cc6.</p>
 <p>至此真正的结束了，耗时三天完成，希望下面的内容可以简单一点</p>
 <hr>
-<p><strong>本系列笔记：</strong> <a href="/2026/11/01/java-security-urldns/">Java安全学习</a> · <a href="/2026/11/01/cc1-study-notes/">Java 反序列化漏洞：CommonsCollections1（CC1）学习笔记</a> · <a href="/2026/11/01/cc1-transformedmap/">cc1链学习</a> · <a href="/2026/11/01/cc1-lazymap/">正版cc1链学习</a> · <a href="/2026/11/01/cc3-classloading/">cc3链学习</a> · <a href="/2026/11/01/cc6-study/">cc6链学习</a></p>
+<p><strong>本系列笔记：</strong> <a href="/2026/11/01/java-security-urldns/">Java安全学习</a> · <a href="/2026/11/01/cc1-study-notes/">Java 反序列化漏洞：CommonsCollections1（CC1）学习笔记</a> · <a href="/2026/11/01/cc1-transformedmap/">cc1链学习</a> · <a href="/2026/11/01/cc1-lazymap/">正版cc1链学习</a> · <a href="/2026/11/01/cc3-classloading/">cc3链学习</a> · <a href="/2026/11/01/cc6-study/">cc6链学习</a> · <a href="/2026/11/06/cc4-study/">cc4链的学习</a></p>
 
 		</div>
 
